@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.DS_Store
+.env
+*.log
+.playwright-cli/
+tmp/
+output/
+呆猫小镇视觉/
