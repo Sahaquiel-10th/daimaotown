@@ -1,11 +1,13 @@
 const DEFAULT_TOWN_API_URL = "https://api.daimao.aiarrival.cn/partner/v1/business";
 const SNAPSHOT_TTL_SECONDS = 60;
+let cachedSnapshot = null;
+let cachedSnapshotExpiresAt = 0;
 
 export default {
-  async fetch(request, env, context) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/api/town/bootstrap") {
-      return townBootstrap(request, env, context);
+      return townBootstrap(env);
     }
 
     const response = await env.ASSETS.fetch(request);
@@ -20,15 +22,17 @@ export default {
   },
 };
 
-async function townBootstrap(request, env, context) {
+async function townBootstrap(env) {
   if (!env.DASHBOARD_PUBLIC_TOKEN) {
     return jsonResponse({ success: false, code: "TOWN_DATA_NOT_CONFIGURED", message: "真实数据连接尚未配置" }, 503);
   }
 
-  const cache = caches.default;
-  const cacheKey = new Request(new URL("/api/town/bootstrap", request.url), { method: "GET" });
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached;
+  if (cachedSnapshot && Date.now() < cachedSnapshotExpiresAt) {
+    return jsonResponse(cachedSnapshot, 200, {
+      "cache-control": `private, max-age=${SNAPSHOT_TTL_SECONDS}`,
+      "x-daimao-data-source": "live",
+    });
+  }
 
   try {
     const pages = [];
@@ -46,12 +50,12 @@ async function townBootstrap(request, env, context) {
     }
 
     const payload = publicBootstrap(mergePages(pages));
-    const response = jsonResponse(payload, 200, {
+    cachedSnapshot = payload;
+    cachedSnapshotExpiresAt = Date.now() + SNAPSHOT_TTL_SECONDS * 1000;
+    return jsonResponse(payload, 200, {
       "cache-control": `private, max-age=${SNAPSHOT_TTL_SECONDS}`,
       "x-daimao-data-source": "live",
     });
-    context.waitUntil(cache.put(cacheKey, response.clone()));
-    return response;
   } catch (error) {
     return jsonResponse({
       success: false,
