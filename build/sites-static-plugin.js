@@ -9,7 +9,7 @@ export function sitesStatic() {
     configResolved(config) {
       root = config.root;
     },
-    async closeBundle() {
+    async writeBundle() {
       const dist = resolve(root, "dist");
       const client = resolve(dist, "client");
       await rm(client, { recursive: true, force: true });

@@ -120,9 +120,9 @@ function App() {
     }
   }
 
-  const projects = bootstrap?.town?.projects?.length ? bootstrap.town.projects : FALLBACK_PROJECTS;
+  const projects = bootstrap ? (bootstrap.town?.projects || []) : FALLBACK_PROJECTS;
   const residents = bootstrap?.town?.residents || [];
-  const skills = bootstrap?.town?.skillBounties?.length ? bootstrap.town.skillBounties : DEMO_SKILLS;
+  const skills = bootstrap ? (bootstrap.town?.skillBounties || []) : DEMO_SKILLS;
   const stats = bootstrap?.stats || {};
   const residentsByProject = useMemo(() => {
     const result = new Map(projects.map((project) => [Number(project.id), []]));
@@ -226,7 +226,7 @@ function App() {
           </div>
         </div>
         <div className="overview-stats">
-          <HeaderStat icon={<UsersRound />} label="冒险家" value={stats.registeredResidents ?? (residents.length || 105)} />
+          <HeaderStat icon={<UsersRound />} label="冒险家" value={bootstrap ? (stats.registeredResidents ?? residents.length) : 105} />
           <HeaderStat icon={<BriefcaseBusiness />} label="进行项目" value={stats.activeProjects ?? projects.filter((p) => p.status !== "completed").length} />
           <HeaderStat icon={<Award />} label="技能悬赏" value={skills.filter((item) => item.kind !== "offer").length} />
           <HeaderStat icon={<Sparkles />} label="技能挂牌" value={skills.filter((item) => item.kind === "offer").length} />
