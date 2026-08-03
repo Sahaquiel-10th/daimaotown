@@ -34,3 +34,9 @@ TOWN_WEB_HOST=0.0.0.0 npm run server
 ```
 
 生产环境应由同域反向代理提供网页与 `/api`，设置 HTTPS，并通过平台密钥管理注入服务端环境变量。进程重启会清空临时会话，符合 V1 设计。
+
+## GitHub 自动化
+
+`main` 分支的每次推送都会触发 GitHub Actions，自动执行依赖安装、测试和生产构建，并保留 7 天的 `dist` 构建产物。Pull Request 也会运行同一套检查。
+
+生产环境需要服务端保存 `DASHBOARD_PUBLIC_TOKEN` 等密钥，因此不能直接部署到纯静态的 GitHub Pages。当前线上使用 Sites 私有托管；若改为自有服务器，应通过 GitHub Secrets 配置服务器 SSH 信息，并由独立部署工作流发布，禁止把任何生产密钥提交到仓库。
