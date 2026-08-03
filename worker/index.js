@@ -1,13 +1,19 @@
 const DEFAULT_TOWN_API_URL = "https://api.daimao.aiarrival.cn/partner/v1/business";
 const SNAPSHOT_TTL_SECONDS = 60;
+const VERSION_TTL_SECONDS = 10;
 let cachedSnapshot = null;
 let cachedSnapshotExpiresAt = 0;
+let cachedVersion = null;
+let cachedVersionExpiresAt = 0;
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/api/town/bootstrap") {
       return townBootstrap(env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/town/version") {
+      return townVersion(env);
     }
 
     const response = await env.ASSETS.fetch(request);
@@ -21,6 +27,29 @@ export default {
     return env.ASSETS.fetch(new Request(url, request));
   },
 };
+
+async function townVersion(env) {
+  if (!env.DASHBOARD_PUBLIC_TOKEN) {
+    return jsonResponse({ success: false, code: "TOWN_DATA_NOT_CONFIGURED", message: "真实数据连接尚未配置" }, 503);
+  }
+  if (cachedVersion && Date.now() < cachedVersionExpiresAt) return jsonResponse(cachedVersion, 200);
+  try {
+    const payload = await fetchTownAction(env, "publicTownRuntimeVersion");
+    if (cachedVersion && cachedVersion.version !== payload.version) {
+      cachedSnapshot = null;
+      cachedSnapshotExpiresAt = 0;
+    }
+    cachedVersion = {
+      success: true,
+      version: text(payload.version, 128),
+      generatedAt: text(payload.generatedAt, 40) || new Date().toISOString(),
+    };
+    cachedVersionExpiresAt = Date.now() + VERSION_TTL_SECONDS * 1000;
+    return jsonResponse(cachedVersion, 200, { "cache-control": "private, no-store" });
+  } catch {
+    return jsonResponse({ success: false, code: "TOWN_VERSION_UNAVAILABLE", message: "版本信息暂时不可用" }, 502);
+  }
+}
 
 async function townBootstrap(env) {
   if (!env.DASHBOARD_PUBLIC_TOKEN) {
@@ -66,6 +95,10 @@ async function townBootstrap(env) {
 }
 
 async function fetchTownPage(env, afterUserId) {
+  return fetchTownAction(env, "publicTownRuntimeContext", { projectLimit: 300, residentLimit: 500, afterUserId });
+}
+
+async function fetchTownAction(env, action, data) {
   const response = await fetch(env.TOWN_DATA_API_URL || DEFAULT_TOWN_API_URL, {
     method: "POST",
     headers: {
@@ -73,10 +106,10 @@ async function fetchTownPage(env, afterUserId) {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      action: "publicTownRuntimeContext",
+      action,
       timestamp: Date.now(),
       nonce: crypto.randomUUID(),
-      data: { projectLimit: 300, residentLimit: 500, afterUserId },
+      ...(data ? { data } : {}),
     }),
   });
   const payload = await response.json().catch(() => null);

@@ -1,5 +1,6 @@
 import http from "node:http";
 import https from "node:https";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -170,6 +171,15 @@ function browserBootstrap(cache) {
     source: cache.source,
     warning: cache.warning || "",
     cacheTtlSeconds: Math.round(snapshotTtlMs / 1000),
+  };
+}
+
+function browserVersion(cache) {
+  const snapshot = browserBootstrap(cache);
+  return {
+    success: true,
+    version: crypto.createHash("sha256").update(JSON.stringify({ stats: snapshot.stats, town: snapshot.town })).digest("hex"),
+    generatedAt: snapshot.generatedAt,
   };
 }
 
@@ -351,6 +361,10 @@ async function handleApi(request, response, url) {
   }
   if (request.method === "GET" && url.pathname === "/api/town/bootstrap") {
     sendJson(response, 200, browserBootstrap(await getSnapshot()));
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/town/version") {
+    sendJson(response, 200, browserVersion(await getSnapshot()));
     return;
   }
   if (request.method === "POST" && url.pathname === "/api/town/session") {

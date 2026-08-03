@@ -18,12 +18,15 @@ npm run dev
 ## BFF 接口
 
 - `GET /api/town/bootstrap`：项目、居民、社区和技能挂牌的完整公开快照；不包含 `assistantContext`。
+- `GET /api/town/version`：轻量数据版本指纹；网页仅在版本变化时重新读取完整快照。
 - `POST /api/town/session`：创建当前页面的临时会话；不足 2 位同项目合格助手时返回 `status=degraded`。
 - `POST /api/town/session/:sessionId/next`：服务端生成、审查并返回一条发言。
 - `DELETE /api/town/session/:sessionId`：提前释放内存会话；TTL 清理仍是最终保障。
 - `GET /api/town/health`：不含凭证的服务状态。
 
 真实模式会读取 `publicTownRuntimeContext`，并通过公开的 `listSkillBounties` 补充技能集市数据。`bootstrap` 在数据中心短时失败时使用最后成功快照；无历史快照且服务端凭证未配置时使用本地演示数据，页面不会白屏。所有 AI Key、CloudBase/CAM 密钥与大屏业务 token 都只能配置在 BFF 服务端，禁止使用 `VITE_` 前缀。
+
+生产大屏每 60 秒请求一次轻量版本指纹，版本没有变化时不会重复下载居民、项目和技能完整快照；页面进入后台时暂停检查，回到前台后立即补查一次。版本接口复用 `DASHBOARD_PUBLIC_TOKEN`，不需要新增数据库表或浏览器端配置。
 
 ## 验证与部署
 

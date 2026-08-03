@@ -70,6 +70,9 @@ const PROP_LAYOUTS = [
 function App() {
   const viewportRef = useRef(null);
   const dragRef = useRef(null);
+  const dataVersionRef = useRef("");
+  const bootstrapRef = useRef(null);
+  const refreshInFlightRef = useRef(false);
   const [bootstrap, setBootstrap] = useState(null);
   const [connection, setConnection] = useState("connecting");
   const [clock, setClock] = useState(new Date());
@@ -81,16 +84,25 @@ function App() {
   const [hintVisible, setHintVisible] = useState(true);
 
   useEffect(() => {
-    loadBootstrap();
+    initializeData();
     const clockTimer = window.setInterval(() => setClock(new Date()), 1000);
-    const dataTimer = window.setInterval(loadBootstrap, 60_000);
+    const dataTimer = window.setInterval(checkForUpdates, 60_000);
     const hintTimer = window.setTimeout(() => setHintVisible(false), 7000);
+    const onVisibilityChange = () => {
+      if (!document.hidden) checkForUpdates();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.clearInterval(clockTimer);
       window.clearInterval(dataTimer);
       window.clearTimeout(hintTimer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, []);
+
+  useEffect(() => {
+    bootstrapRef.current = bootstrap;
+  }, [bootstrap]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => focusAt(1250, 780, fittedScale()), 30);
@@ -107,16 +119,50 @@ function App() {
     };
   }, []);
 
-  async function loadBootstrap() {
+  async function initializeData() {
+    let version = "";
+    try {
+      version = await loadDataVersion();
+    } catch {
+      // The full snapshot remains a safe compatibility path while the version
+      // endpoint is unavailable or an older backend is still being deployed.
+    }
+    await loadBootstrap(version);
+  }
+
+  async function loadDataVersion() {
+    const response = await fetch(`${apiBase}/town/version`, { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok || !payload?.success || !payload.version) throw new Error(payload?.message || "版本读取失败");
+    return String(payload.version);
+  }
+
+  async function checkForUpdates() {
+    if (refreshInFlightRef.current || document.hidden) return;
+    try {
+      const version = await loadDataVersion();
+      if (!dataVersionRef.current || version !== dataVersionRef.current) await loadBootstrap(version);
+      else setConnection("ready");
+    } catch {
+      setConnection(bootstrapRef.current ? "stale" : "demo");
+    }
+  }
+
+  async function loadBootstrap(version = "") {
+    if (refreshInFlightRef.current) return;
+    refreshInFlightRef.current = true;
     setConnection((value) => value === "ready" ? "refreshing" : "connecting");
     try {
       const response = await fetch(`${apiBase}/town/bootstrap`);
       const payload = await response.json();
       if (!response.ok || !payload?.success) throw new Error(payload?.message || "数据读取失败");
       setBootstrap(payload);
+      if (version) dataVersionRef.current = version;
       setConnection(payload.source === "live" ? "ready" : payload.source === "stale" ? "stale" : "demo");
     } catch {
-      setConnection("demo");
+      setConnection(bootstrapRef.current ? "stale" : "demo");
+    } finally {
+      refreshInFlightRef.current = false;
     }
   }
 
