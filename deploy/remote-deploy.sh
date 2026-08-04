@@ -32,5 +32,14 @@ fi
 ln -sfn "$release_dir" "$app_root/current.next"
 mv -Tf "$app_root/current.next" "$app_root/current"
 sudo /bin/systemctl restart daimaotown.service
-curl --fail --silent --show-error http://127.0.0.1:3080/api/town/health >/dev/null
+for attempt in {1..30}; do
+  if curl --fail --silent http://127.0.0.1:3080/api/town/health >/dev/null; then
+    break
+  fi
+  if [[ "$attempt" == "30" ]]; then
+    echo "daimaotown health check failed" >&2
+    exit 1
+  fi
+  sleep 0.5
+done
 echo "daimaotown deployed: $commit_sha"

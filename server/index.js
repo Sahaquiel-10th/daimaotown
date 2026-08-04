@@ -172,7 +172,7 @@ async function refreshSnapshot() {
         runtime.town.skillBounties = [];
       }
     }
-    snapshot = await resolveCloudUrls(runtime);
+    snapshot = townDataApiUrl ? runtime : await resolveCloudUrls(runtime);
   }
   snapshotCache = { snapshot, source, fetchedAt: Date.now(), expiresAt: Date.now() + snapshotTtlMs };
   return snapshotCache;
