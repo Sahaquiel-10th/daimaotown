@@ -25,6 +25,8 @@ if [[ ! -d "$release_dir" ]]; then
   test -f "$staging_dir/dist/index.html"
   test -f "$staging_dir/server/index.js"
   mv "$staging_dir" "$release_dir"
+else
+  cat >/dev/null
 fi
 
 ln -sfn "$release_dir" "$app_root/current.next"
