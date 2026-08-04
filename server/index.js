@@ -31,6 +31,8 @@ const demoMode = process.env.TOWN_USE_DEMO === "true";
 const cloudbaseEnv = process.env.CLOUDBASE_ENV || "cloud1-8gocbg40af3862ce";
 const cloudbaseRegion = process.env.CLOUDBASE_REGION || "ap-shanghai";
 const dashboardToken = process.env.DASHBOARD_PUBLIC_TOKEN || "";
+const townDataApiUrl = process.env.TOWN_DATA_API_URL || "";
+const townDataTimeoutMs = numberEnv("TOWN_DATA_TIMEOUT_MS", 15000, 3000, 55000);
 const snapshotTtlMs = numberEnv("TOWN_SNAPSHOT_TTL_SECONDS", 60, 15, 300) * 1000;
 const cloudUrlMaxAge = numberEnv("TOWN_CLOUD_URL_MAX_AGE_SECONDS", 600, 60, 3600);
 const sessionTtlMs = numberEnv("TOWN_SESSION_TTL_MINUTES", 30, 5, 120) * 60_000;
@@ -76,6 +78,40 @@ async function invokeDaimaoBusiness(data) {
   return response?.result;
 }
 
+async function invokeTownPartner(action, data = {}) {
+  if (!townDataApiUrl || !dashboardToken) {
+    throw publicError("DATA_CENTER_NOT_CONFIGURED", "数据中心服务端凭证尚未配置");
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), townDataTimeoutMs);
+  try {
+    const response = await fetch(townDataApiUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${dashboardToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action, timestamp: Date.now(), nonce: crypto.randomUUID(), data }),
+      signal: controller.signal,
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.success) {
+      throw publicError("DATA_CENTER_ERROR", payload?.message || `数据中心 HTTP ${response.status}`);
+    }
+    return payload;
+  } catch (error) {
+    if (error?.name === "AbortError") throw publicError("DATA_CENTER_ERROR", "数据中心请求超时");
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function invokeTownData(action, data = {}) {
+  if (townDataApiUrl) return invokeTownPartner(action, data);
+  return invokeDaimaoBusiness({ action, dashboardToken, ...data });
+}
+
 async function loadAllRuntimePages() {
   const pages = [];
   const seenCursors = new Set();
@@ -83,9 +119,7 @@ async function loadAllRuntimePages() {
   for (let pageIndex = 0; pageIndex < 1000; pageIndex += 1) {
     if (seenCursors.has(afterUserId)) throw publicError("PAGINATION_LOOP", "居民分页游标重复");
     seenCursors.add(afterUserId);
-    const page = await invokeDaimaoBusiness({
-      action: "publicTownRuntimeContext",
-      dashboardToken,
+    const page = await invokeTownData("publicTownRuntimeContext", {
       projectLimit: 300,
       residentLimit: 500,
       afterUserId,
@@ -125,13 +159,18 @@ async function refreshSnapshot() {
     source = "mock";
   } else {
     const runtime = await loadAllRuntimePages();
-    try {
-      const skillPayload = await invokeDaimaoBusiness({ action: "listSkillBounties", limit: 100 });
+    if (townDataApiUrl) {
       runtime.town = runtime.town || {};
-      runtime.town.skillBounties = skillPayload?.skillBounties || [];
-    } catch {
-      runtime.town = runtime.town || {};
-      runtime.town.skillBounties = [];
+      runtime.town.skillBounties = runtime.town.skillBounties || [];
+    } else {
+      try {
+        const skillPayload = await invokeDaimaoBusiness({ action: "listSkillBounties", limit: 100 });
+        runtime.town = runtime.town || {};
+        runtime.town.skillBounties = skillPayload?.skillBounties || [];
+      } catch {
+        runtime.town = runtime.town || {};
+        runtime.town.skillBounties = [];
+      }
     }
     snapshot = await resolveCloudUrls(runtime);
   }
@@ -364,7 +403,12 @@ async function handleApi(request, response, url) {
     return;
   }
   if (request.method === "GET" && url.pathname === "/api/town/version") {
-    sendJson(response, 200, browserVersion(await getSnapshot()));
+    if (townDataApiUrl) {
+      const payload = await invokeTownPartner("publicTownRuntimeVersion");
+      sendJson(response, 200, { success: true, version: String(payload.version || ""), generatedAt: payload.generatedAt || new Date().toISOString() });
+    } else {
+      sendJson(response, 200, browserVersion(await getSnapshot()));
+    }
     return;
   }
   if (request.method === "POST" && url.pathname === "/api/town/session") {
@@ -463,5 +507,5 @@ function localDay() { return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/
 function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function pickWeighted(items, weight) { if (!items.length) return null; const total = items.reduce((sum, item) => sum + weight(item), 0); let cursor = Math.random() * total; for (const item of items) { cursor -= weight(item); if (cursor <= 0) return item; } return items.at(-1); }
 function clientIp(request) { return cleanText(String(request.headers["x-forwarded-for"] || request.socket.remoteAddress || "unknown").split(",")[0], 80); }
-function cloudConfigured() { return Boolean(dashboardToken && (process.env.TENCENTCLOUD_SECRETID || process.env.CLOUDBASE_SECRET_ID || process.env.CLOUDBASE_SECRETID) && (process.env.TENCENTCLOUD_SECRETKEY || process.env.CLOUDBASE_SECRET_KEY || process.env.CLOUDBASE_SECRETKEY)); }
+function cloudConfigured() { return Boolean(dashboardToken && (townDataApiUrl || ((process.env.TENCENTCLOUD_SECRETID || process.env.CLOUDBASE_SECRET_ID || process.env.CLOUDBASE_SECRETID) && (process.env.TENCENTCLOUD_SECRETKEY || process.env.CLOUDBASE_SECRET_KEY || process.env.CLOUDBASE_SECRETKEY)))); }
 function contentType(filePath) { const ext = path.extname(filePath); return ({ ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" })[ext] || "application/octet-stream"; }

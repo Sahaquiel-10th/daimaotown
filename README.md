@@ -13,7 +13,7 @@ npm run server
 npm run dev
 ```
 
-默认网页为 `http://localhost:5173`，BFF 为 `http://127.0.0.1:8091`。`.env.example` 默认启用 105 位模拟居民、3 个项目与 6 份技能演示数据；连接真实数据前，将 `TOWN_USE_DEMO` 改为 `false`，并在 BFF 的环境变量中配置 CloudBase/CAM 凭证与 `DASHBOARD_PUBLIC_TOKEN`。
+默认网页为 `http://localhost:5173`，BFF 为 `http://127.0.0.1:8091`。`.env.example` 默认启用 105 位模拟居民、3 个项目与 6 份技能演示数据；连接真实数据前，将 `TOWN_USE_DEMO` 改为 `false`，并在 BFF 的环境变量中配置 CloudBase/CAM 凭证与 `DASHBOARD_PUBLIC_TOKEN`。独立服务器也可配置 `TOWN_DATA_API_URL`，通过 Partner API 读取数据而不保存数据库主密钥。
 
 ## BFF 接口
 
@@ -27,6 +27,8 @@ npm run dev
 真实模式会读取 `publicTownRuntimeContext`，并通过公开的 `listSkillBounties` 补充技能集市数据。`bootstrap` 在数据中心短时失败时使用最后成功快照；无历史快照且服务端凭证未配置时使用本地演示数据，页面不会白屏。所有 AI Key、CloudBase/CAM 密钥与大屏业务 token 都只能配置在 BFF 服务端，禁止使用 `VITE_` 前缀。
 
 生产大屏每 60 秒请求一次轻量版本指纹，版本没有变化时不会重复下载居民、项目和技能完整快照；页面进入后台时暂停检查，回到前台后立即补查一次。版本接口复用 `DASHBOARD_PUBLIC_TOKEN`，不需要新增数据库表或浏览器端配置。
+
+独立服务器部署文件位于 `deploy/`。生产服务只监听 `127.0.0.1:3080`，由独立的 Nginx 站点转发；GitHub Actions 使用受限 SSH Key 触发 `/usr/local/sbin/deploy-daimaotown`，不会获得通用服务器 Shell 权限。
 
 ## 验证与部署
 
@@ -42,4 +44,4 @@ TOWN_WEB_HOST=0.0.0.0 npm run server
 
 `main` 分支的每次推送都会触发 GitHub Actions，自动执行依赖安装、测试和生产构建，并保留 7 天的 `dist` 构建产物。Pull Request 也会运行同一套检查。
 
-生产环境需要服务端保存 `DASHBOARD_PUBLIC_TOKEN` 等密钥，因此不能直接部署到纯静态的 GitHub Pages。当前线上使用 Sites 私有托管；若改为自有服务器，应通过 GitHub Secrets 配置服务器 SSH 信息，并由独立部署工作流发布，禁止把任何生产密钥提交到仓库。
+生产环境需要服务端保存 `DASHBOARD_PUBLIC_TOKEN` 等密钥，因此不能直接部署到纯静态的 GitHub Pages。自有服务器将业务密钥保存在服务器的 `/etc/daimaotown.env`，GitHub Secrets 只保存受限部署 Key、主机指纹和连接地址；任何生产密钥都不得提交到仓库。
