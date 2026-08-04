@@ -44,5 +44,5 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          tar --exclude=.git --exclude=node_modules -czf /tmp/daimaotown-release.tar.gz .
+          tar -czf /tmp/daimaotown-release.tar.gz dist server package.json
           ssh -i ~/.ssh/daimaotown_deploy -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" "deploy $GITHUB_SHA" < /tmp/daimaotown-release.tar.gz
