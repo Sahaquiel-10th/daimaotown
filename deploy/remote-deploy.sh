@@ -2,9 +2,7 @@
 set -euo pipefail
 
 app_root="/opt/daimaotown"
-repo_dir="$app_root/repository"
 release_root="$app_root/releases"
-repository_url="https://github.com/Sahaquiel-10th/daimaotown.git"
 request="${1:-${SSH_ORIGINAL_COMMAND:-}}"
 
 if [[ "$request" =~ ^deploy[[:space:]]+([0-9a-f]{40})$ ]]; then
@@ -19,29 +17,13 @@ fi
 exec 9>"$app_root/deploy.lock"
 flock -n 9 || { echo "another daimaotown deployment is already running" >&2; exit 75; }
 
-mkdir -p "$repo_dir" "$release_root"
-if [[ ! -d "$repo_dir/.git" ]]; then
-  git clone --filter=blob:none "$repository_url" "$repo_dir"
-fi
-
-git -C "$repo_dir" remote set-url origin "$repository_url"
-git -C "$repo_dir" fetch --prune origin main
-remote_sha="$(git -C "$repo_dir" rev-parse origin/main)"
-if [[ "$remote_sha" != "$commit_sha" ]]; then
-  echo "requested commit is not the current origin/main" >&2
-  exit 65
-fi
-
+mkdir -p "$release_root"
 release_dir="$release_root/$commit_sha"
 if [[ ! -d "$release_dir" ]]; then
-  staging_dir="$release_root/.staging-$commit_sha"
-  mkdir -p "$staging_dir"
-  git -C "$repo_dir" archive "$commit_sha" | tar -x -C "$staging_dir"
-  cd "$staging_dir"
-  npm ci
-  npm test
-  npm run build
-  npm prune --omit=dev
+  staging_dir="$(mktemp -d "$release_root/.staging-$commit_sha.XXXXXX")"
+  tar -xzf - -C "$staging_dir"
+  test -f "$staging_dir/dist/index.html"
+  test -f "$staging_dir/server/index.js"
   mv "$staging_dir" "$release_dir"
 fi
 

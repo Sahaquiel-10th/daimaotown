@@ -28,7 +28,7 @@ npm run dev
 
 生产大屏每 60 秒请求一次轻量版本指纹，版本没有变化时不会重复下载居民、项目和技能完整快照；页面进入后台时暂停检查，回到前台后立即补查一次。版本接口复用 `DASHBOARD_PUBLIC_TOKEN`，不需要新增数据库表或浏览器端配置。
 
-独立服务器部署文件位于 `deploy/`。生产服务只监听 `127.0.0.1:3080`，由独立的 Nginx 站点转发；GitHub Actions 使用受限 SSH Key 触发 `/usr/local/sbin/deploy-daimaotown`，不会获得通用服务器 Shell 权限。
+独立服务器部署文件位于 `deploy/`。生产服务只监听 `127.0.0.1:3080`，由独立的 Nginx 站点转发；GitHub Actions 使用受限 SSH Key 把已验证的构建包传给 `/usr/local/sbin/deploy-daimaotown`，不会获得通用服务器 Shell 权限，也不依赖服务器主动连接 GitHub。
 
 ## 验证与部署
 
