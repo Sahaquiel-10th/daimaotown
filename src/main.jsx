@@ -53,19 +53,28 @@ const DECORATIVE_HOUSES = [
   ["project-market", 210, 250, 145], ["project-studio", 690, 235, 135], ["project-lab", 930, 255, 150],
   ["project-memorial", 1640, 250, 120], ["project-studio", 1880, 250, 140], ["project-workshop", 2190, 270, 135],
   ["project-market", 2470, 390, 125], ["project-lab", 250, 1000, 140], ["project-memorial", 500, 1170, 115],
-  ["project-studio", 700, 1330, 145], ["project-workshop", 1090, 1420, 130], ["project-market", 1510, 1410, 145],
-  ["project-lab", 1820, 1325, 130], ["project-memorial", 2240, 1300, 120], ["project-studio", 2480, 1120, 145],
+  ["project-studio", 700, 1210, 145], ["project-workshop", 1090, 1230, 130], ["project-market", 1510, 1190, 145],
+  ["project-lab", 1820, 1160, 130], ["project-memorial", 2240, 1110, 120], ["project-studio", 2480, 1000, 145],
 ];
 
 const PROP_LAYOUTS = [
-  ["prop-tree", 120, 190, 66], ["prop-tree", 580, 160, 58], ["prop-tree", 1280, 170, 64], ["prop-tree", 2380, 210, 62],
-  ["prop-tree", 2630, 650, 58], ["prop-tree", 110, 1280, 64], ["prop-tree", 2540, 1420, 62], ["prop-tree", 1420, 1510, 58],
-  ["prop-shrub", 760, 480, 42], ["prop-shrub", 1700, 460, 40], ["prop-shrub", 980, 1320, 38], ["prop-shrub", 2180, 1190, 40],
-  ["prop-lamp", 830, 720, 34], ["prop-lamp", 1770, 720, 34], ["prop-lamp", 1220, 1210, 32], ["prop-lamp", 1510, 1020, 32],
-  ["prop-bench", 810, 980, 50], ["prop-bench", 1570, 1210, 50], ["prop-bench", 1960, 650, 48],
+  ["prop-tree", 120, 190, 66], ["prop-tree", 178, 215, 56], ["prop-tree", 226, 186, 62],
+  ["prop-tree", 570, 165, 60], ["prop-tree", 625, 185, 52], ["prop-tree", 1280, 170, 64], ["prop-tree", 1338, 195, 54],
+  ["prop-tree", 2380, 210, 62], ["prop-tree", 2435, 235, 54], ["prop-tree", 2630, 650, 58], ["prop-tree", 2580, 680, 50],
+  ["prop-tree", 110, 1180, 64], ["prop-tree", 165, 1200, 52], ["prop-tree", 2550, 1160, 62], ["prop-tree", 2605, 1190, 52],
+  ["prop-shrub", 245, 240, 38], ["prop-shrub", 290, 250, 32], ["prop-shrub", 760, 480, 42], ["prop-shrub", 805, 495, 34],
+  ["prop-shrub", 1700, 460, 40], ["prop-shrub", 1745, 475, 32], ["prop-shrub", 980, 1190, 38], ["prop-shrub", 1020, 1200, 32],
+  ["prop-shrub", 2180, 1090, 40], ["prop-shrub", 2222, 1100, 32],
+  ["prop-lamp", 595, 700, 30], ["prop-lamp", 760, 590, 30], ["prop-lamp", 960, 505, 30], ["prop-lamp", 1180, 455, 30],
+  ["prop-lamp", 1600, 455, 30], ["prop-lamp", 1830, 510, 30], ["prop-lamp", 2070, 600, 30], ["prop-lamp", 2290, 730, 30],
+  ["prop-lamp", 2330, 980, 30], ["prop-lamp", 2070, 1130, 30], ["prop-lamp", 1770, 1210, 30], ["prop-lamp", 1260, 1260, 30],
+  ["prop-lamp", 720, 1125, 30], ["prop-lamp", 510, 970, 30], ["prop-lamp", 920, 785, 28], ["prop-lamp", 1100, 820, 28],
+  ["prop-lamp", 1650, 850, 28], ["prop-lamp", 1870, 900, 28],
+  ["prop-bench", 790, 560, 50], ["prop-bench", 820, 990, 50], ["prop-bench", 1690, 570, 50],
+  ["prop-bench", 1910, 1060, 50], ["prop-bench", 1190, 1090, 50], ["prop-bench", 1580, 1070, 50],
   ["prop-signpost", 720, 750, 40], ["prop-mailbox", 1630, 810, 30], ["prop-fountain", 1320, 925, 92],
   ["prop-planter", 1040, 1110, 42], ["prop-parcels", 2080, 1250, 40], ["prop-produce-crate", 510, 900, 40],
-  ["prop-notice-board", 860, 570, 46], ["prop-bridge", 2420, 620, 78],
+  ["prop-notice-board", 860, 570, 46], ["prop-bridge", 2330, 1260, 160],
 ];
 
 function App() {
@@ -89,7 +98,7 @@ function App() {
     initializeData();
     const clockTimer = window.setInterval(() => setClock(new Date()), 1000);
     const dataTimer = window.setInterval(checkForUpdates, 60_000);
-    const residentTimer = window.setInterval(() => setResidentBatch((value) => value + 1), 90_000);
+    const residentTimer = window.setInterval(() => setResidentBatch((value) => value + 1), 180_000);
     const hintTimer = window.setTimeout(() => setHintVisible(false), 7000);
     const onVisibilityChange = () => {
       if (!document.hidden) checkForUpdates();
@@ -176,7 +185,7 @@ function App() {
   const stats = bootstrap?.stats || {};
   const visibleProjects = projects.filter((project) => !search || `${project.name} ${(project.tags || []).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   const visibleSkills = skills.filter((skill) => !search || `${skill.title} ${skill.ownerName} ${(skill.tags || []).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
-  const selectedData = resolveSelection(selected, projects, skills);
+  const selectedData = resolveSelection(selected, projects, skills, residents);
 
   function fittedScale() {
     const rect = viewportRef.current?.getBoundingClientRect();
@@ -319,7 +328,6 @@ function App() {
           <div className="projects-layer">
             <ProjectHall
               projects={visibleProjects}
-              residents={residents}
               selected={selected?.type === "project-hall" || selected?.type === "project"}
               onSelect={() => pick({ type: "project-hall" }, { x: 550, y: 720 })}
             />
@@ -344,9 +352,14 @@ function App() {
 
           <div className="environment-layer" aria-hidden="true">
             {DECORATIVE_HOUSES.map(([name, x, y, width], index) => <img className="decorative-house" key={`house-${index}`} src={art(name)} style={{ left: x, top: y, width }} alt="" draggable="false" />)}
-            {PROP_LAYOUTS.map(([name, x, y, width], index) => <img key={`${name}-${index}`} src={art(name)} style={{ left: x, top: y, width }} alt="" draggable="false" />)}
+            {PROP_LAYOUTS.map(([name, x, y, width], index) => <img className={`town-prop prop-${name.replace("prop-", "")}`} key={`${name}-${index}`} src={art(name)} style={{ left: x, top: y, width }} alt="" draggable="false" />)}
           </div>
-          <WanderingAssistants residents={residents} batch={residentBatch} />
+          <WanderingAssistants
+            residents={residents}
+            batch={residentBatch}
+            selectedId={selected?.type === "resident" ? selected.id : null}
+            onSelect={(person) => setSelected({ type: "resident", id: person.id, item: person })}
+          />
         </div>
 
         {hintVisible && <div className="map-hint"><Maximize2 />拖动画布探索小镇 · 滚轮缩放</div>}
@@ -389,10 +402,9 @@ function DistrictSign({ className, icon, eyebrow, title, detail }) {
   return <div className={`district-sign ${className}`}><div>{icon}</div><span><small>{eyebrow}</small><strong>{title}</strong><em>{detail}</em></span></div>;
 }
 
-function ProjectHall({ projects, residents, selected, onSelect }) {
+function ProjectHall({ projects, selected, onSelect }) {
   const participants = projects.reduce((total, project) => total + Number(project.participantCount || 0), 0);
   const active = projects.filter((project) => project.status !== "completed").length;
-  const featuredPeople = residents.filter((resident) => resident.home?.zone === "project").slice(0, 4);
   return (
     <button
       className={`project-node project-hall world-node ${selected ? "selected" : ""}`}
@@ -406,9 +418,6 @@ function ProjectHall({ projects, residents, selected, onSelect }) {
         <span>ALL PROJECT QUESTS</span>
         <strong>项目大厅</strong>
         <div><em><BriefcaseBusiness />{projects.length} 个项目</em><em><UsersRound />{participants} 人次协作</em></div>
-      </div>
-      <div className="resident-ring">
-        {featuredPeople.map((person, index) => <AssistantToken key={person.id || index} person={person} index={index} />)}
       </div>
       <div className="building-hover-card"><b>项目大厅</b><span>所有付费项目集中在这里展示</span><em>点击查看 {projects.length} 个项目 ›</em></div>
     </button>
@@ -452,24 +461,34 @@ function AssistantToken({ person, index = 0 }) {
   );
 }
 
-function WanderingAssistants({ residents, batch }) {
+function WanderingAssistants({ residents, batch, selectedId, onSelect }) {
   const fallbackNames = Array.from({ length: 50 }, (_, index) => ({ id: `demo-${index}`, displayName: `冒险家 ${String(index + 1).padStart(2, "0")}` }));
   const source = residents.length ? residents : fallbackNames;
   const count = Math.min(50, source.length);
   const start = source.length > count ? (batch * count) % source.length : 0;
   const people = Array.from({ length: count }, (_, index) => source[(start + index) % source.length]);
+  const groupSizes = [3, 5, 4, 3, 4, 5, 3, 5, 4, 4, 5, 5];
+  const groupMeta = groupSizes.flatMap((size, group) => Array.from({ length: size }, (_, member) => ({ group, member })));
   return (
     <div className="wanderers">
-      {people.map((person, index) => (
-        <div
-          className={`wanderer route-${index % 8}`}
-          key={`${person.id || person.displayName}-${batch}`}
-          style={{ "--walk-delay": `${-((index * 7) % 41)}s`, "--walk-duration": `${38 + (index % 9) * 3}s`, "--walk-scale": `${0.78 + (index % 5) * 0.055}` }}
-        >
-          <AssistantToken person={person} index={index} />
-          {index === 1 && <div className="thought-bubble">正在项目大厅附近停留…</div>}
-        </div>
-      ))}
+      {people.map((person, index) => {
+        const meta = groupMeta[index];
+        const duration = 88 + (meta.group % 5) * 9 + meta.member * 3.5;
+        const delay = -((meta.group * 13) % 70) - meta.member * .65;
+        return (
+          <button
+            type="button"
+            className={`wanderer route-${meta.group % 8} ${String(selectedId) === String(person.id) ? "selected" : ""}`}
+            key={`${person.id || person.displayName}-${batch}`}
+            style={{ "--walk-delay": `${delay}s`, "--walk-duration": `${duration}s`, "--walk-scale": `${0.78 + (index % 5) * 0.055}` }}
+            onClick={(event) => { event.stopPropagation(); onSelect(person); }}
+            aria-label={`查看冒险家 ${person.displayName || "呆猫助手"} 的公开档案`}
+          >
+            <AssistantToken person={person} index={index} />
+            {index === 1 && <div className="thought-bubble">正在项目大厅附近停留…</div>}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -540,6 +559,37 @@ function DetailPanel({ data, projects, skills, onClose, onSelectProject, onSelec
       </aside>
     );
   }
+  if (data.type === "resident") {
+    const resident = data.item;
+    const currentProject = projects.find((project) => String(project.id) === String(resident.home?.projectId));
+    const communities = resident.communities || [];
+    return (
+      <aside className="detail-panel resident-panel">
+        <PanelHead eyebrow="ADVENTURER PROFILE" title="冒险家档案" onClose={onClose} />
+        <div className="resident-profile-head">
+          <div className="resident-profile-avatar">
+            <img className="profile-fallback" src="/assets/town/logo.png" alt="" />
+            {resident.avatarUrl && <img className="profile-real-avatar" src={resident.avatarUrl} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+          </div>
+          <div><span>用户的 AI 小助手</span><h3>{resident.displayName}</h3><em>呆猫社区冒险家</em></div>
+        </div>
+        <div className="resident-activity">
+          <span>当前活动</span>
+          <strong>{currentProject ? `正在「${currentProject.name}」附近活动` : "正在小镇广场自由探索"}</strong>
+        </div>
+        <div className="panel-metrics resident-metrics">
+          <div><span>参与项目</span><b>{resident.participantProjectIds?.length || 0}</b></div>
+          <div><span>关注项目</span><b>{resident.watchingProjectIds?.length || 0}</b></div>
+          <div><span>冒险经验</span><b>{Number(resident.experiencePoints || 0).toLocaleString("zh-CN")}</b></div>
+        </div>
+        <div className="resident-communities">
+          <span>所属社区</span>
+          <div>{communities.length ? communities.map((community, index) => <i key={community.id || `${community.name}-${index}`}>{community.name || "呆猫社区"}</i>) : <i>呆猫社区</i>}</div>
+        </div>
+        <div className="privacy-note"><ShieldCheck /><span><b>隐私安全展示</b><small>这里只展示公开的小镇身份与活动信息，不展示微信号、手机号或其他联系方式。</small></span></div>
+      </aside>
+    );
+  }
   return (
     <aside className="detail-panel">
       <PanelHead eyebrow="COMMUNITY PORTAL" title="居民议事厅" onClose={onClose} />
@@ -580,11 +630,12 @@ function MapPaths() {
   );
 }
 
-function resolveSelection(selected, projects, skills) {
+function resolveSelection(selected, projects, skills, residents) {
   if (!selected) return null;
   if (selected.type === "guild" || selected.type === "community" || selected.type === "project-hall") return selected;
   if (selected.type === "project") return { type: "project", item: projects.find((item) => String(item.id) === String(selected.id)) || projects[0] };
   if (selected.type === "skill") return { type: "skill", item: skills.find((item) => String(item.id) === String(selected.id)) || skills[0] };
+  if (selected.type === "resident") return { type: "resident", item: residents.find((item) => String(item.id) === String(selected.id)) || selected.item };
   if (selected.type === "stall") {
     const stall = SKILL_STALLS.find((item) => item.id === selected.id);
     return { type: "stall", ...stall };
