@@ -123,6 +123,10 @@ export function publicSkillBounty(skill) {
       ? "tech"
       : "operations";
   const availability = cleanText(skill?.availabilityStatus || skill?.availability_status, 30);
+  const publishStatus = cleanText(skill?.publishStatus || skill?.publish_status, 30);
+  const displayStatus = ["completed", "archived"].includes(skill?.status) || publishStatus === "archived"
+    ? "completed"
+    : ["busy", "resting"].includes(availability) ? "paused" : "active";
   const heat = finiteNumber(skill?.applicants ?? skill?.catCount ?? skill?.cat_count);
   return {
     id: Number(skill?.id) || cleanText(skill?.id, 80),
@@ -139,6 +143,9 @@ export function publicSkillBounty(skill) {
     serviceScopes: scopes,
     description: cleanText(skill?.description || skill?.short_intro, 500) || scopes.join("；"),
     kind: skill?.kind === "bounty" ? "bounty" : "offer",
+    availabilityStatus: availability,
+    publishStatus,
+    displayStatus,
     updatedAt: cleanText(skill?.updatedAt || skill?.updated_at, 40),
   };
 }
@@ -182,5 +189,7 @@ function finiteNumber(value) {
 
 function cleanUrl(value) {
   const url = cleanText(value, 1000);
-  return /^(https?:\/\/|cloud:\/\/)/i.test(url) ? url : "";
+  const cloudMatch = url.match(/^cloud:\/\/[^.]+\.([^/]+)\/(.+)$/i);
+  if (cloudMatch) return `https://${cloudMatch[1]}.tcb.qcloud.la/${encodeURI(cloudMatch[2])}`;
+  return /^https?:\/\//i.test(url) ? url : "";
 }

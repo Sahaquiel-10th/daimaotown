@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
@@ -23,25 +23,19 @@ const WandSparkles = glyph("✧");
 const X = glyph("×");
 
 const apiBase = import.meta.env.VITE_TOWN_API_URL || "/api";
-const WORLD = { width: 2500, height: 1600 };
+const WORLD = { width: 2800, height: 1800 };
 const art = (name) => `/assets/town/papercraft/${name}.png`;
 
 const DEMO_SKILLS = [
-  { id: "s1", title: "品牌视觉搭档", category: "creative", categoryName: "创意工坊", ownerName: "青柚", ownerRole: "社区品牌主理人", reward: "800 鱼干", applicants: 6, deadline: "剩余 3 天", tags: ["品牌视觉", "海报"], description: "为周末有趣市集建立一套轻盈、好记的视觉语言。", kind: "bounty" },
-  { id: "s2", title: "短视频剪辑支援", category: "creative", categoryName: "创意工坊", ownerName: "珊珊", ownerRole: "内容策划", reward: "500 鱼干", applicants: 4, deadline: "剩余 5 天", tags: ["剪辑", "内容"], description: "把社区共创过程剪成三支 30 秒短片。", kind: "bounty" },
-  { id: "s3", title: "小程序前端开发", category: "tech", categoryName: "技术营地", ownerName: "周野", ownerRole: "独立开发者", reward: "1200 鱼干", applicants: 8, deadline: "剩余 6 天", tags: ["小程序", "React"], description: "协助完成活动报名与订单状态页面。", kind: "bounty" },
-  { id: "s4", title: "AI 工作流搭建", category: "tech", categoryName: "技术营地", ownerName: "木子", ownerRole: "AI 产品经理", reward: "技能挂牌", applicants: 12, deadline: "本周可约", tags: ["Agent", "自动化"], description: "可提供从需求梳理到轻量 Agent 落地的协作。", kind: "offer" },
-  { id: "s5", title: "市集招商运营", category: "operations", categoryName: "运营商栈", ownerName: "小满", ownerRole: "活动运营", reward: "600 鱼干", applicants: 5, deadline: "剩余 4 天", tags: ["招商", "活动"], description: "寻找熟悉本地生活商家的运营伙伴。", kind: "bounty" },
-  { id: "s6", title: "社群增长顾问", category: "operations", categoryName: "运营商栈", ownerName: "南星", ownerRole: "增长顾问", reward: "技能挂牌", applicants: 9, deadline: "今日有空", tags: ["增长", "社群"], description: "擅长冷启动、社群机制和转介绍路径设计。", kind: "offer" },
+  { id: "s1", title: "品牌视觉搭档", ownerName: "青柚", ownerRole: "社区品牌主理人", reward: "技能挂牌", applicants: 6, deadline: "当前可约", tags: ["品牌视觉", "海报"], description: "为周末有趣市集建立一套轻盈、好记的视觉语言。", kind: "offer", displayStatus: "active" },
+  { id: "s2", title: "短视频剪辑支援", ownerName: "珊珊", ownerRole: "内容策划", reward: "技能挂牌", applicants: 4, deadline: "档期较满", tags: ["剪辑", "内容"], description: "把社区共创过程剪成三支 30 秒短片。", kind: "offer", displayStatus: "paused" },
+  { id: "s3", title: "小程序前端开发", ownerName: "周野", ownerRole: "独立开发者", reward: "技能挂牌", applicants: 8, deadline: "已完成展示", tags: ["小程序", "React"], description: "协助完成活动报名与订单状态页面。", kind: "offer", displayStatus: "completed" },
+  { id: "s4", title: "AI 工作流搭建", ownerName: "木子", ownerRole: "AI 产品经理", reward: "技能挂牌", applicants: 12, deadline: "本周可约", tags: ["Agent", "自动化"], description: "可提供从需求梳理到轻量 Agent 落地的协作。", kind: "offer", displayStatus: "active" },
+  { id: "s5", title: "市集招商运营", ownerName: "小满", ownerRole: "活动运营", reward: "技能挂牌", applicants: 5, deadline: "暂时休息", tags: ["招商", "活动"], description: "寻找熟悉本地生活商家的运营伙伴。", kind: "offer", displayStatus: "paused" },
+  { id: "s6", title: "社群增长顾问", ownerName: "南星", ownerRole: "增长顾问", reward: "技能挂牌", applicants: 9, deadline: "当前可约", tags: ["增长", "社群"], description: "擅长冷启动、社群机制和转介绍路径设计。", kind: "offer", displayStatus: "active" },
 ];
 
-const PROJECT_LAYOUTS = [
-  { x: 235, y: 250, width: 390, asset: "project-workshop", tone: "gold" },
-  { x: 210, y: 780, width: 350, asset: "project-market", tone: "coral" },
-  { x: 1760, y: 230, width: 345, asset: "project-lab", tone: "mint" },
-  { x: 2020, y: 695, width: 285, asset: "project-memorial", tone: "stone" },
-  { x: 470, y: 1080, width: 320, asset: "project-studio", tone: "coral" },
-];
+const PROJECT_HALL = { x: 410, y: 525, width: 280, asset: "project-workshop" };
 
 const FALLBACK_PROJECTS = [
   { id: 12, name: "社区灵感工坊", description: "把街坊的好点子做成看得见的小实验。", status: "active", stage: "MVP", goal: "完成首场社区共创", tags: ["社区", "AI"], participantCount: 14, watcherCount: 24 },
@@ -50,21 +44,28 @@ const FALLBACK_PROJECTS = [
 ];
 
 const SKILL_STALLS = [
-  { id: "creative", title: "创意工坊", subtitle: "设计 · 内容 · 影像", x: 1530, y: 930, width: 300, asset: "skill-creative" },
-  { id: "tech", title: "技术营地", subtitle: "开发 · AI · 产品", x: 1770, y: 1065, width: 285, asset: "skill-tech" },
-  { id: "operations", title: "运营商栈", subtitle: "增长 · 商务 · 活动", x: 2070, y: 980, width: 285, asset: "skill-operations" },
+  { id: "active", title: "进行中", subtitle: "当前可被发现与邀约", x: 1900, y: 830, width: 185, asset: "skill-creative" },
+  { id: "paused", title: "暂停", subtitle: "档期忙碌或暂时休息", x: 2115, y: 930, width: 175, asset: "skill-tech" },
+  { id: "completed", title: "已完成", subtitle: "已经沉淀的技能足迹", x: 2310, y: 820, width: 180, asset: "skill-operations" },
+];
+
+const DECORATIVE_HOUSES = [
+  ["project-market", 210, 250, 145], ["project-studio", 690, 235, 135], ["project-lab", 930, 255, 150],
+  ["project-memorial", 1640, 250, 120], ["project-studio", 1880, 250, 140], ["project-workshop", 2190, 270, 135],
+  ["project-market", 2470, 390, 125], ["project-lab", 250, 1000, 140], ["project-memorial", 500, 1170, 115],
+  ["project-studio", 700, 1330, 145], ["project-workshop", 1090, 1420, 130], ["project-market", 1510, 1410, 145],
+  ["project-lab", 1820, 1325, 130], ["project-memorial", 2240, 1300, 120], ["project-studio", 2480, 1120, 145],
 ];
 
 const PROP_LAYOUTS = [
-  ["prop-tree", 80, 210, 115], ["prop-tree", 690, 180, 100], ["prop-tree", 2190, 210, 120],
-  ["prop-tree", 2320, 430, 95], ["prop-tree", 114, 1230, 110], ["prop-tree", 2220, 1300, 105],
-  ["prop-shrub", 755, 410, 74], ["prop-shrub", 1630, 420, 72], ["prop-shrub", 1000, 1280, 68],
-  ["prop-lamp", 820, 650, 62], ["prop-lamp", 1645, 685, 62], ["prop-lamp", 1175, 1120, 58],
-  ["prop-bench", 790, 910, 92], ["prop-bench", 1435, 1190, 92],
-  ["prop-signpost", 640, 730, 70], ["prop-mailbox", 1500, 780, 52],
-  ["prop-fountain", 1135, 860, 165], ["prop-planter", 960, 1080, 76],
-  ["prop-parcels", 1990, 1240, 72], ["prop-produce-crate", 520, 890, 72],
-  ["prop-notice-board", 920, 585, 75], ["prop-bridge", 2220, 590, 130],
+  ["prop-tree", 120, 190, 66], ["prop-tree", 580, 160, 58], ["prop-tree", 1280, 170, 64], ["prop-tree", 2380, 210, 62],
+  ["prop-tree", 2630, 650, 58], ["prop-tree", 110, 1280, 64], ["prop-tree", 2540, 1420, 62], ["prop-tree", 1420, 1510, 58],
+  ["prop-shrub", 760, 480, 42], ["prop-shrub", 1700, 460, 40], ["prop-shrub", 980, 1320, 38], ["prop-shrub", 2180, 1190, 40],
+  ["prop-lamp", 830, 720, 34], ["prop-lamp", 1770, 720, 34], ["prop-lamp", 1220, 1210, 32], ["prop-lamp", 1510, 1020, 32],
+  ["prop-bench", 810, 980, 50], ["prop-bench", 1570, 1210, 50], ["prop-bench", 1960, 650, 48],
+  ["prop-signpost", 720, 750, 40], ["prop-mailbox", 1630, 810, 30], ["prop-fountain", 1320, 925, 92],
+  ["prop-planter", 1040, 1110, 42], ["prop-parcels", 2080, 1250, 40], ["prop-produce-crate", 510, 900, 40],
+  ["prop-notice-board", 860, 570, 46], ["prop-bridge", 2420, 620, 78],
 ];
 
 function App() {
@@ -82,11 +83,13 @@ function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [hintVisible, setHintVisible] = useState(true);
+  const [residentBatch, setResidentBatch] = useState(0);
 
   useEffect(() => {
     initializeData();
     const clockTimer = window.setInterval(() => setClock(new Date()), 1000);
     const dataTimer = window.setInterval(checkForUpdates, 60_000);
+    const residentTimer = window.setInterval(() => setResidentBatch((value) => value + 1), 90_000);
     const hintTimer = window.setTimeout(() => setHintVisible(false), 7000);
     const onVisibilityChange = () => {
       if (!document.hidden) checkForUpdates();
@@ -95,6 +98,7 @@ function App() {
     return () => {
       window.clearInterval(clockTimer);
       window.clearInterval(dataTimer);
+      window.clearInterval(residentTimer);
       window.clearTimeout(hintTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
@@ -105,11 +109,11 @@ function App() {
   }, [bootstrap]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => focusAt(1250, 780, fittedScale()), 30);
+    const timer = window.setTimeout(() => focusAt(1400, 900, fittedScale()), 30);
     let resizeTimer;
     const onResize = () => {
       window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(() => focusAt(1250, 780, fittedScale()), 120);
+      resizeTimer = window.setTimeout(() => focusAt(1400, 900, fittedScale()), 120);
     };
     window.addEventListener("resize", onResize);
     return () => {
@@ -170,15 +174,6 @@ function App() {
   const residents = bootstrap?.town?.residents || [];
   const skills = bootstrap ? (bootstrap.town?.skillBounties || []) : DEMO_SKILLS;
   const stats = bootstrap?.stats || {};
-  const residentsByProject = useMemo(() => {
-    const result = new Map(projects.map((project) => [Number(project.id), []]));
-    residents.forEach((resident) => {
-      const id = Number(resident.home?.projectId);
-      if (result.has(id)) result.get(id).push(resident);
-    });
-    return result;
-  }, [projects, residents]);
-
   const visibleProjects = projects.filter((project) => !search || `${project.name} ${(project.tags || []).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   const visibleSkills = skills.filter((skill) => !search || `${skill.title} ${skill.ownerName} ${(skill.tags || []).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   const selectedData = resolveSelection(selected, projects, skills);
@@ -199,9 +194,9 @@ function App() {
   function changeMode(nextMode) {
     setMode(nextMode);
     setSelected(nextMode === "all" ? { type: "guild" } : null);
-    if (nextMode === "projects") focusAt(830, 760, 0.78);
-    else if (nextMode === "skills") focusAt(1800, 1010, 0.82);
-    else focusAt(1250, 780, fittedScale());
+    if (nextMode === "projects") focusAt(550, 760, 0.9);
+    else if (nextMode === "skills") focusAt(2160, 980, 0.85);
+    else focusAt(1400, 900, fittedScale());
   }
 
   function zoom(delta) {
@@ -274,8 +269,8 @@ function App() {
         <div className="overview-stats">
           <HeaderStat icon={<UsersRound />} label="冒险家" value={bootstrap ? (stats.registeredResidents ?? residents.length) : 105} />
           <HeaderStat icon={<BriefcaseBusiness />} label="进行项目" value={stats.activeProjects ?? projects.filter((p) => p.status !== "completed").length} />
-          <HeaderStat icon={<Award />} label="技能悬赏" value={skills.filter((item) => item.kind !== "offer").length} />
-          <HeaderStat icon={<Sparkles />} label="技能挂牌" value={skills.filter((item) => item.kind === "offer").length} />
+          <HeaderStat icon={<Award />} label="技能进行中" value={skills.filter((item) => skillDisplayStatus(item) === "active").length} />
+          <HeaderStat icon={<Sparkles />} label="技能暂停" value={skills.filter((item) => skillDisplayStatus(item) === "paused").length} />
         </div>
         <div className="header-actions">
           <div className={`connection-pill ${connection}`}><Radio />{connectionLabel(connection)}</div>
@@ -306,10 +301,10 @@ function App() {
         >
           <div className="paper-island" />
           <MapPaths />
-          <DistrictSign className="projects-sign" icon={<BriefcaseBusiness />} eyebrow="PROJECT QUESTS" title="项目大厅" detail={`${projects.length} 个项目正在这里发生`} />
-          <DistrictSign className="skills-sign" icon={<WandSparkles />} eyebrow="SKILL BOUNTIES" title="技能集市" detail={`${skills.length} 份技能等待被发现`} />
+          <DistrictSign className="projects-sign" icon={<BriefcaseBusiness />} eyebrow="PROJECT QUESTS" title="项目大厅" detail={`${projects.length} 个项目集中展示`} />
+          <DistrictSign className="skills-sign" icon={<WandSparkles />} eyebrow="SKILL MARKET" title="技能集市" detail={`${skills.length} 位技能冒险家在此挂牌`} />
 
-          <button className={`guild world-node ${selected?.type === "guild" ? "selected" : ""}`} onClick={(event) => { event.stopPropagation(); pick({ type: "guild" }, { x: 1250, y: 720 }); }}>
+          <button className={`guild world-node ${selected?.type === "guild" ? "selected" : ""}`} onClick={(event) => { event.stopPropagation(); pick({ type: "guild" }, { x: 1400, y: 830 }); }}>
             <div className="guild-halo" />
             <img src={art("guild")} alt="冒险家公会" draggable="false" />
             <div className="guild-banner">
@@ -322,20 +317,12 @@ function App() {
           </button>
 
           <div className="projects-layer">
-            {visibleProjects.slice(0, PROJECT_LAYOUTS.length).map((project, index) => {
-              const layout = PROJECT_LAYOUTS[index] || PROJECT_LAYOUTS.at(-1);
-              const projectResidents = residentsByProject.get(Number(project.id)) || [];
-              return (
-                <ProjectNode
-                  key={project.id}
-                  project={project}
-                  layout={layout}
-                  residents={projectResidents}
-                  selected={selected?.type === "project" && String(selected.id) === String(project.id)}
-                  onSelect={() => pick({ type: "project", id: project.id }, { x: layout.x + layout.width / 2, y: layout.y + 240 })}
-                />
-              );
-            })}
+            <ProjectHall
+              projects={visibleProjects}
+              residents={residents}
+              selected={selected?.type === "project-hall" || selected?.type === "project"}
+              onSelect={() => pick({ type: "project-hall" }, { x: 550, y: 720 })}
+            />
           </div>
 
           <div className="skills-layer">
@@ -343,7 +330,7 @@ function App() {
               <SkillStall
                 key={stall.id}
                 stall={stall}
-                skills={visibleSkills.filter((item) => item.category === stall.id)}
+                skills={visibleSkills.filter((item) => skillDisplayStatus(item) === stall.id)}
                 selected={selected?.type === "stall" && selected.id === stall.id}
                 onSelect={() => pick({ type: "stall", id: stall.id }, { x: stall.x + stall.width / 2, y: stall.y + 200 })}
               />
@@ -356,9 +343,10 @@ function App() {
           </button>
 
           <div className="environment-layer" aria-hidden="true">
+            {DECORATIVE_HOUSES.map(([name, x, y, width], index) => <img className="decorative-house" key={`house-${index}`} src={art(name)} style={{ left: x, top: y, width }} alt="" draggable="false" />)}
             {PROP_LAYOUTS.map(([name, x, y, width], index) => <img key={`${name}-${index}`} src={art(name)} style={{ left: x, top: y, width }} alt="" draggable="false" />)}
           </div>
-          <WanderingAssistants residents={residents} />
+          <WanderingAssistants residents={residents} batch={residentBatch} />
         </div>
 
         {hintVisible && <div className="map-hint"><Maximize2 />拖动画布探索小镇 · 滚轮缩放</div>}
@@ -379,12 +367,13 @@ function App() {
           </div>
         )}
 
-        <DetailPanel data={selectedData} projects={projects} skills={skills} onClose={() => setSelected(null)} onSelectSkill={(id) => setSelected({ type: "skill", id })} />
+        <DetailPanel data={selectedData} projects={projects} skills={skills} onClose={() => setSelected(null)} onSelectProject={(id) => setSelected({ type: "project", id })} onSelectSkill={(id) => setSelected({ type: "skill", id })} />
 
         <div className="map-legend">
           <span><i className="legend-dot project" />项目任务</span>
-          <span><i className="legend-dot bounty" />技能悬赏</span>
-          <span><i className="legend-dot offer" />技能挂牌</span>
+          <span><i className="legend-dot bounty" />技能进行中</span>
+          <span><i className="legend-dot paused" />技能暂停</span>
+          <span><i className="legend-dot completed" />技能已完成</span>
           <em>画面中的角色为用户 AI 小助手</em>
         </div>
       </section>
@@ -400,27 +389,28 @@ function DistrictSign({ className, icon, eyebrow, title, detail }) {
   return <div className={`district-sign ${className}`}><div>{icon}</div><span><small>{eyebrow}</small><strong>{title}</strong><em>{detail}</em></span></div>;
 }
 
-function ProjectNode({ project, layout, residents, selected, onSelect }) {
-  const people = residents.length ? residents : mockPeople(project);
-  const total = project.participantCount ?? people.filter((p) => p.relation !== "watcher").length;
-  const watching = project.watcherCount ?? people.filter((p) => p.relation === "watcher").length;
+function ProjectHall({ projects, residents, selected, onSelect }) {
+  const participants = projects.reduce((total, project) => total + Number(project.participantCount || 0), 0);
+  const active = projects.filter((project) => project.status !== "completed").length;
+  const featuredPeople = residents.filter((resident) => resident.home?.zone === "project").slice(0, 4);
   return (
     <button
-      className={`project-node world-node tone-${layout.tone} ${project.status === "completed" ? "completed" : ""} ${selected ? "selected" : ""}`}
-      style={{ left: layout.x, top: layout.y, width: layout.width }}
+      className={`project-node project-hall world-node ${selected ? "selected" : ""}`}
+      style={{ left: PROJECT_HALL.x, top: PROJECT_HALL.y, width: PROJECT_HALL.width }}
       onClick={(event) => { event.stopPropagation(); onSelect(); }}
     >
       <div className="node-shadow" />
-      <img className="building-art" src={art(layout.asset)} alt="" draggable="false" />
-      <div className="project-flag">{project.status === "completed" ? "冒险完成" : project.stage || "进行中"}</div>
+      <img className="building-art" src={art(PROJECT_HALL.asset)} alt="" draggable="false" />
+      <div className="project-flag">{active} 项进行中</div>
       <div className="node-label">
-        <span>{project.status === "completed" ? "COMPLETED QUEST" : "ACTIVE QUEST"}</span>
-        <strong>{project.name}</strong>
-        <div><em><UsersRound />{total} 人协作</em><em><Eye />{watching} 人关注</em></div>
+        <span>ALL PROJECT QUESTS</span>
+        <strong>项目大厅</strong>
+        <div><em><BriefcaseBusiness />{projects.length} 个项目</em><em><UsersRound />{participants} 人次协作</em></div>
       </div>
       <div className="resident-ring">
-        {people.slice(0, 4).map((person, index) => <AssistantToken key={person.id || index} person={person} index={index} />)}
+        {featuredPeople.map((person, index) => <AssistantToken key={person.id || index} person={person} index={index} />)}
       </div>
+      <div className="building-hover-card"><b>项目大厅</b><span>所有付费项目集中在这里展示</span><em>点击查看 {projects.length} 个项目 ›</em></div>
     </button>
   );
 }
@@ -436,47 +426,55 @@ function SkillStall({ stall, skills, selected, onSelect }) {
       <img src={art(stall.asset)} alt="" draggable="false" />
       <div className="skill-count"><strong>{skills.length}</strong><span>份技能</span></div>
       <div className="node-label skill-label">
-        <span>SKILL MARKET</span><strong>{stall.title}</strong><small>{stall.subtitle}</small>
+        <span>SKILL MARKET STATUS</span><strong>{stall.title}</strong><small>{stall.subtitle}</small>
       </div>
       {skills.slice(0, 2).map((skill, index) => (
         <div key={skill.id} className={`floating-order order-${index} ${skill.kind === "offer" ? "offer" : ""}`}>
-          <i>{skill.kind === "offer" ? "技能挂牌" : "悬赏"}</i><b>{skill.title}</b>
+          <i>技能挂牌</i><b>{skill.title}</b>
         </div>
       ))}
+      <div className="building-hover-card"><b>{stall.title} · {skills.length} 位</b><span>{stall.subtitle}</span><em>点击查看技能列表 ›</em></div>
     </button>
   );
 }
 
 function AssistantToken({ person, index = 0 }) {
   const name = person.displayName || person.ownerName || "呆猫助手";
+  const avatarUrl = person.avatarUrl || "";
   return (
     <div className={`assistant-token token-${index % 4}`}>
-      <div className="assistant-body"><img src="/assets/town/logo.png" alt="" /></div>
+      <div className={`assistant-body ${avatarUrl ? "has-avatar" : ""}`}>
+        <img className="assistant-fallback" src="/assets/town/logo.png" alt="" />
+        {avatarUrl && <img className="assistant-avatar" src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+      </div>
       <span>{name}</span>
     </div>
   );
 }
 
-function WanderingAssistants({ residents }) {
-  const fallback = ["阿橘", "小满", "清禾", "南星", "团子", "木子", "小鹿", "知夏"];
-  const names = residents.length ? residents.slice(0, 8).map((item) => item.displayName) : fallback;
-  const positions = [
-    [920, 770], [1465, 755], [840, 1110], [1550, 1240],
-    [1140, 1235], [1840, 780], [690, 620], [1950, 520],
-  ];
+function WanderingAssistants({ residents, batch }) {
+  const fallbackNames = Array.from({ length: 50 }, (_, index) => ({ id: `demo-${index}`, displayName: `冒险家 ${String(index + 1).padStart(2, "0")}` }));
+  const source = residents.length ? residents : fallbackNames;
+  const count = Math.min(50, source.length);
+  const start = source.length > count ? (batch * count) % source.length : 0;
+  const people = Array.from({ length: count }, (_, index) => source[(start + index) % source.length]);
   return (
     <div className="wanderers">
-      {names.map((name, index) => (
-        <div className={`wanderer wander-${index}`} key={`${name}-${index}`} style={{ left: positions[index][0], top: positions[index][1] }}>
-          <AssistantToken person={{ displayName: name }} index={index} />
-          {index === 1 && <div className="thought-bubble">正在寻找 UI 搭档…</div>}
+      {people.map((person, index) => (
+        <div
+          className={`wanderer route-${index % 8}`}
+          key={`${person.id || person.displayName}-${batch}`}
+          style={{ "--walk-delay": `${-((index * 7) % 41)}s`, "--walk-duration": `${38 + (index % 9) * 3}s`, "--walk-scale": `${0.78 + (index % 5) * 0.055}` }}
+        >
+          <AssistantToken person={person} index={index} />
+          {index === 1 && <div className="thought-bubble">正在项目大厅附近停留…</div>}
         </div>
       ))}
     </div>
   );
 }
 
-function DetailPanel({ data, projects, skills, onClose, onSelectSkill }) {
+function DetailPanel({ data, projects, skills, onClose, onSelectProject, onSelectSkill }) {
   if (!data) return null;
   if (data.type === "guild") {
     return (
@@ -504,19 +502,37 @@ function DetailPanel({ data, projects, skills, onClose, onSelectSkill }) {
       </aside>
     );
   }
+  if (data.type === "project-hall") {
+    return (
+      <aside className="detail-panel">
+        <PanelHead eyebrow="PROJECT QUEST HALL" title="项目大厅" onClose={onClose} />
+        <p className="panel-intro">小镇里的项目不再各占一栋房子。所有公开项目集中在这里，随着数量增长继续使用同一个大厅。</p>
+        <div className="project-list">
+          {projects.map((project) => (
+            <button key={project.id} onClick={() => onSelectProject(project.id)}>
+              <i className={project.status === "completed" ? "completed" : "active"}>{project.status === "completed" ? "已完成" : project.stage || "进行中"}</i>
+              <b>{project.name}</b>
+              <span>{project.participantCount || 0} 人协作 · {project.watcherCount || 0} 人关注</span>
+              <ChevronRight />
+            </button>
+          ))}
+        </div>
+      </aside>
+    );
+  }
   if (data.type === "skill") {
     return <SkillDetail skill={data.item} onClose={onClose} />;
   }
   if (data.type === "stall") {
-    const categorySkills = skills.filter((item) => item.category === data.id);
+    const categorySkills = skills.filter((item) => skillDisplayStatus(item) === data.id);
     return (
       <aside className="detail-panel">
         <PanelHead eyebrow="SKILL MARKET" title={data.title} onClose={onClose} />
-        <p className="panel-intro">{data.subtitle}。这里既有等待认领的技能悬赏，也有居民主动亮出的能力挂牌。</p>
+        <p className="panel-intro">{data.subtitle}。这里展示的是有技能的冒险家，分组只用于大屏观察，不会改动后台的档期与上架状态。</p>
         <div className="skill-list">
           {categorySkills.map((skill) => (
             <button key={skill.id} onClick={() => onSelectSkill(skill.id)}>
-              <i className={skill.kind}>{skill.kind === "offer" ? "技能挂牌" : "悬赏招募"}</i>
+              <i className={data.id}>技能挂牌</i>
               <b>{skill.title}</b><span>{skill.ownerName} · {skill.reward}</span><ChevronRight />
             </button>
           ))}
@@ -534,13 +550,15 @@ function DetailPanel({ data, projects, skills, onClose, onSelectSkill }) {
 }
 
 function SkillDetail({ skill, onClose }) {
+  const displayStatus = skillDisplayStatus(skill);
+  const displayLabel = ({ active: "进行中", paused: "暂停", completed: "已完成" })[displayStatus];
   return (
     <aside className="detail-panel">
-      <PanelHead eyebrow={skill.kind === "offer" ? "SKILL AVAILABLE" : "SKILL BOUNTY"} title={skill.title} onClose={onClose} />
-      <div className="status-row"><span className={`status ${skill.kind}`}>{skill.kind === "offer" ? "技能挂牌" : "悬赏招募"}</span><span><Clock3 />{skill.deadline}</span></div>
+      <PanelHead eyebrow="ADVENTURER SKILL" title={skill.title} onClose={onClose} />
+      <div className="status-row"><span className={`status ${displayStatus}`}>{displayLabel}</span><span><Clock3 />{skill.deadline}</span></div>
       <p className="panel-intro">{skill.description}</p>
-      <div className="owner-card"><div>{skill.ownerName.slice(0, 1)}</div><span><small>委托人</small><b>{skill.ownerName}</b><em>{skill.ownerRole}</em></span></div>
-      <div className="reward-card"><span>{skill.kind === "offer" ? "当前热度" : "悬赏报酬"}</span><strong>{skill.reward}</strong><em>{skill.applicants} 位冒险家已关注</em></div>
+      <div className="owner-card"><div>{skill.avatarUrl ? <img src={skill.avatarUrl} alt="" /> : skill.ownerName.slice(0, 1)}</div><span><small>技能冒险家</small><b>{skill.ownerName}</b><em>{skill.ownerRole}</em></span></div>
+      <div className="reward-card"><span>当前热度</span><strong>{skill.reward}</strong><em>{skill.applicants} 位冒险家已关注</em></div>
       <div className="tag-list">{skill.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
     </aside>
   );
@@ -553,18 +571,18 @@ function PanelHead({ eyebrow, title, onClose }) {
 function MapPaths() {
   return (
     <svg className="map-paths" viewBox={`0 0 ${WORLD.width} ${WORLD.height}`} aria-hidden="true">
-      <path className="river-shadow" d="M -100 1420 C 280 1180 330 1030 540 980 C 770 925 890 1050 1050 1015 C 1230 975 1300 805 1465 785 C 1680 760 1750 860 1940 785 C 2140 705 2210 565 2600 530" />
-      <path className="river" d="M -100 1420 C 280 1180 330 1030 540 980 C 770 925 890 1050 1050 1015 C 1230 975 1300 805 1465 785 C 1680 760 1750 860 1940 785 C 2140 705 2210 565 2600 530" />
-      <path className="road outer" d="M 220 695 C 400 500 655 525 875 650 C 1030 740 1090 835 1250 835 C 1435 835 1470 695 1645 580 C 1815 470 2070 490 2270 690" />
-      <path className="road" d="M 1250 760 C 980 690 745 510 505 420 M 1190 790 C 905 825 600 870 390 940 M 1290 785 C 1515 680 1705 525 1910 420 M 1300 840 C 1535 960 1720 1110 1900 1210 M 1125 855 C 950 1060 785 1190 620 1260" />
-      <path className="road-stitch outer" d="M 220 695 C 400 500 655 525 875 650 C 1030 740 1090 835 1250 835 C 1435 835 1470 695 1645 580 C 1815 470 2070 490 2270 690" />
+      <path className="river-shadow" d="M -80 1510 C 360 1390 620 1490 940 1435 C 1260 1380 1480 1455 1780 1405 C 2100 1350 2380 1435 2880 1280" />
+      <path className="river" d="M -80 1510 C 360 1390 620 1490 940 1435 C 1260 1380 1480 1455 1780 1405 C 2100 1350 2380 1435 2880 1280" />
+      <path className="road outer" d="M 410 760 C 520 430 980 330 1400 430 C 1850 335 2310 470 2410 820 C 2490 1130 2070 1320 1610 1270 C 1210 1395 680 1240 430 980 C 360 900 360 830 410 760 Z" />
+      <path className="road" d="M 1400 850 L 540 720 M 1400 850 L 2160 940 M 1400 850 L 930 1280 M 1400 850 L 1850 1270 M 1400 850 L 1400 430 M 540 720 L 430 980 M 2160 940 L 2410 820" />
+      <path className="road-stitch outer" d="M 410 760 C 520 430 980 330 1400 430 C 1850 335 2310 470 2410 820 C 2490 1130 2070 1320 1610 1270 C 1210 1395 680 1240 430 980 C 360 900 360 830 410 760 Z" />
     </svg>
   );
 }
 
 function resolveSelection(selected, projects, skills) {
   if (!selected) return null;
-  if (selected.type === "guild" || selected.type === "community") return selected;
+  if (selected.type === "guild" || selected.type === "community" || selected.type === "project-hall") return selected;
   if (selected.type === "project") return { type: "project", item: projects.find((item) => String(item.id) === String(selected.id)) || projects[0] };
   if (selected.type === "skill") return { type: "skill", item: skills.find((item) => String(item.id) === String(selected.id)) || skills[0] };
   if (selected.type === "stall") {
@@ -574,9 +592,11 @@ function resolveSelection(selected, projects, skills) {
   return null;
 }
 
-function mockPeople(project) {
-  const names = ["阿橘", "小满", "周野", "清禾"];
-  return names.map((displayName, index) => ({ id: `${project.id}-${index}`, displayName, relation: index === 3 ? "watcher" : "participant" }));
+function skillDisplayStatus(skill) {
+  if (["active", "paused", "completed"].includes(skill.displayStatus)) return skill.displayStatus;
+  if (["completed", "archived"].includes(skill.status) || skill.publishStatus === "archived") return "completed";
+  if (["busy", "resting"].includes(skill.availabilityStatus)) return "paused";
+  return "active";
 }
 
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }

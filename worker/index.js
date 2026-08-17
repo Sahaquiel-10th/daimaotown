@@ -170,6 +170,7 @@ function publicResident(resident) {
   return {
     id: number(resident.id),
     displayName: text(resident.displayName, 80) || `小镇居民 #${resident.id}`,
+    avatarUrl: publicUrl(resident.avatarUrl),
     experiencePoints: number(resident.experiencePoints),
     communities: (resident.communities || []).slice(0, 20).map(publicCommunity),
     participantProjectIds: numberList(resident.participantProjectIds),
@@ -193,6 +194,10 @@ function publicSkill(skill) {
       ? "tech"
       : "operations";
   const availability = text(skill.availabilityStatus || skill.availability_status, 30);
+  const publishStatus = text(skill.publishStatus || skill.publish_status, 30);
+  const displayStatus = ["completed", "archived"].includes(skill.status) || publishStatus === "archived"
+    ? "completed"
+    : ["busy", "resting"].includes(availability) ? "paused" : "active";
   const heat = number(skill.applicants ?? skill.catCount ?? skill.cat_count);
   return {
     id: number(skill.id) || text(skill.id, 80),
@@ -200,6 +205,7 @@ function publicSkill(skill) {
     category,
     ownerName: text(skill.ownerName || skill.display_name, 80) || "技能冒险家",
     ownerRole: text(skill.ownerRole, 100) || "技能冒险家",
+    avatarUrl: publicUrl(skill.avatarUrl || skill.avatar_url),
     reward: text(skill.reward, 80) || `🐱 × ${heat}`,
     applicants: heat,
     deadline: text(skill.deadline, 80) || ({ idle: "当前空闲", available: "可以接单", busy: "档期较满", resting: "暂时休息" })[availability] || "档期可询",
@@ -207,6 +213,9 @@ function publicSkill(skill) {
     serviceScopes: scopes,
     description: text(skill.description || skill.short_intro, 500) || scopes.join("；"),
     kind: skill.kind === "bounty" ? "bounty" : "offer",
+    availabilityStatus: availability,
+    publishStatus,
+    displayStatus,
   };
 }
 
@@ -222,4 +231,10 @@ function text(value, max) { return String(value || "").replace(/[\u0000-\u001f\u
 function number(value) { const result = Number(value); return Number.isFinite(result) ? result : 0; }
 function numberList(value) { return Array.isArray(value) ? [...new Set(value.map(number).filter(Number.isSafeInteger))] : []; }
 function textList(value, limit, max) { return Array.isArray(value) ? value.slice(0, limit).map((item) => text(item, max)).filter(Boolean) : []; }
+function publicUrl(value) {
+  const url = text(value, 1000);
+  const cloudMatch = url.match(/^cloud:\/\/[^.]+\.([^/]+)\/(.+)$/i);
+  if (cloudMatch) return `https://${cloudMatch[1]}.tcb.qcloud.la/${encodeURI(cloudMatch[2])}`;
+  return /^https?:\/\//i.test(url) ? url : "";
+}
 function jsonResponse(payload, status, headers = {}) { return new Response(JSON.stringify(payload), { status, headers: { "content-type": "application/json; charset=utf-8", ...headers } }); }
