@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { collectCloudFileIds, mergeRuntimePages, moderatePublicReply, replaceCloudFileIds, stripAssistantContext } from "../server/town-core.js";
+import { collectCloudFileIds, mergeRuntimePages, moderatePublicReply, publicResident, replaceCloudFileIds, stripAssistantContext } from "../server/town-core.js";
 import { createMockTownSnapshot } from "../server/mock-town.js";
 
 test("居民分页合并去重并保留第一页项目快照", () => {
@@ -19,6 +19,26 @@ test("公开快照递归删除所有 assistantContext", () => {
   const stripped = stripAssistantContext({ town: { residents: [{ id: 1, assistantContext: { eligible: true }, nested: { assistantContext: { secret: true } } }] } });
   assert.equal(JSON.stringify(stripped).includes("assistantContext"), false);
   assert.deepEqual(stripped.town.residents[0], { id: 1, nested: {} });
+});
+
+test("居民公开名片只保留展示字段且不暴露微信号", () => {
+  const resident = publicResident({
+    id: 7,
+    displayName: "阿橘",
+    assistantContext: {
+      cardSummary: {
+        job: "品牌主理人",
+        intro: "正在做一个社区品牌。",
+        tags: ["品牌"],
+        selectedAnswers: [{ q: "最近在做什么？", a: "筹备周末市集。" }],
+        wechat: "should-not-leak",
+      },
+      wechat: "also-should-not-leak",
+    },
+  });
+  assert.deepEqual(resident.publicCard.answers, [{ question: "最近在做什么？", answer: "筹备周末市集。" }]);
+  assert.equal(JSON.stringify(resident).includes("should-not-leak"), false);
+  assert.equal(JSON.stringify(resident).includes("wechat"), false);
 });
 
 test("cloud fileID 可收集并替换为 HTTPS", () => {

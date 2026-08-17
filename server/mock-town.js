@@ -30,7 +30,16 @@ export function createMockTownSnapshot(count = 105) {
         notInterestedIn: ["群发广告"],
         preferredProjectTypes: ["社区", "AI"],
         collaborationStyle: "先从一个小问题开始。",
-        cardSummary: { job: "小镇共创者", intro: "喜欢把想法做成可见的结果。", tags: ["社区", "共创"], selectedAnswers: [] },
+        cardSummary: {
+          job: "小镇共创者",
+          intro: "喜欢把想法做成可见的结果，也愿意认识能一起行动的新伙伴。",
+          tags: ["社区", "共创"],
+          selectedAnswers: [
+            { q: "最近在做什么？", a: "正在参与一项社区共创小实验。" },
+            { q: "可以提供什么？", a: "策划、组织和把想法落地的经验。" },
+            { q: "想认识谁？", a: "愿意一起验证新想法的行动派。" },
+          ],
+        },
       } : { eligible: false },
     };
   });
@@ -48,7 +57,7 @@ export function createMockTownSnapshot(count = 105) {
     success: true,
     version: 1,
     stats: { registeredResidents: count, publicProjects: projects.length, activeProjects: 2, participantRelations: participants, watcherRelations: watchers, communities: 6 },
-    town: { projects, residents, communities: [], events: [], skillBounties },
+    town: { projects, residents, communities: [{ id: 1, name: "I Have a Demo", logoUrl: "" }, { id: 2, name: "轻创", logoUrl: "" }], events: [], skillBounties },
     pagination: { residentLimit: 500, afterUserId: 0, hasMoreResidents: false, nextAfterUserId: null, projectsTruncated: false, returnedProjects: projects.length },
     generatedAt: new Date().toISOString(),
     cacheTtlSeconds: 60,

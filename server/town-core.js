@@ -55,6 +55,7 @@ export function stableNumber(value) {
 }
 
 export function publicResident(resident) {
+  const card = resident?.assistantContext?.cardSummary || resident?.publicCard || {};
   return {
     id: Number(resident.id),
     displayName: cleanText(resident.displayName, 80) || `小镇居民 #${resident.id}`,
@@ -68,6 +69,17 @@ export function publicResident(resident) {
       projectId: Number(resident.home.projectId) || null,
       relation: ["participant", "watcher"].includes(resident.home.relation) ? resident.home.relation : null,
     } : { zone: "plaza", projectId: null, relation: null },
+    publicCard: {
+      job: cleanText(card.job, 120),
+      intro: cleanText(card.intro, 300),
+      tags: Array.isArray(card.tags) ? card.tags.slice(0, 8).map((item) => cleanText(item, 40)).filter(Boolean) : [],
+      answers: Array.isArray(card.selectedAnswers || card.answers)
+        ? (card.selectedAnswers || card.answers).slice(0, 3).map((item) => ({
+          question: cleanText(item?.q || item?.question, 100),
+          answer: cleanText(item?.a || item?.answer, 200),
+        })).filter((item) => item.question && item.answer)
+        : [],
+    },
   };
 }
 
@@ -93,6 +105,8 @@ export function publicProject(project) {
   return {
     id: Number(project.id),
     name: cleanText(project.name, 100) || `项目 #${project.id}`,
+    communityId: Number(project.communityId || project.community_id) || null,
+    communityName: cleanText(project.communityName || project.community_name, 80),
     description: cleanText(project.description, 240),
     status: ["active", "completed"].includes(project.status) ? project.status : "active",
     stage: cleanText(project.stage, 40),

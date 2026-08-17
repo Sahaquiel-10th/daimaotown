@@ -181,6 +181,7 @@ function App() {
 
   const projects = bootstrap ? (bootstrap.town?.projects || []) : FALLBACK_PROJECTS;
   const residents = bootstrap?.town?.residents || [];
+  const communities = bootstrap?.town?.communities || [];
   const skills = bootstrap ? (bootstrap.town?.skillBounties || []) : DEMO_SKILLS;
   const stats = bootstrap?.stats || {};
   const visibleProjects = projects.filter((project) => !search || `${project.name} ${(project.tags || []).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
@@ -356,6 +357,8 @@ function App() {
           </div>
           <WanderingAssistants
             residents={residents}
+            projects={projects}
+            skills={skills}
             batch={residentBatch}
             selectedId={selected?.type === "resident" ? selected.id : null}
             onSelect={(person) => setSelected({ type: "resident", id: person.id, item: person })}
@@ -380,7 +383,7 @@ function App() {
           </div>
         )}
 
-        <DetailPanel data={selectedData} projects={projects} skills={skills} onClose={() => setSelected(null)} onSelectProject={(id) => setSelected({ type: "project", id })} onSelectSkill={(id) => setSelected({ type: "skill", id })} />
+        <DetailPanel data={selectedData} projects={projects} skills={skills} residents={residents} communities={communities} onClose={() => setSelected(null)} onSelectProject={(id) => setSelected({ type: "project", id })} onSelectSkill={(id) => setSelected({ type: "skill", id })} />
 
         <div className="map-legend">
           <span><i className="legend-dot project" />项目任务</span>
@@ -461,31 +464,37 @@ function AssistantToken({ person, index = 0 }) {
   );
 }
 
-function WanderingAssistants({ residents, batch, selectedId, onSelect }) {
+function WanderingAssistants({ residents, projects, skills, batch, selectedId, onSelect }) {
   const fallbackNames = Array.from({ length: 50 }, (_, index) => ({ id: `demo-${index}`, displayName: `冒险家 ${String(index + 1).padStart(2, "0")}` }));
   const source = residents.length ? residents : fallbackNames;
   const count = Math.min(50, source.length);
   const start = source.length > count ? (batch * count) % source.length : 0;
   const people = Array.from({ length: count }, (_, index) => source[(start + index) % source.length]);
-  const groupSizes = [3, 5, 4, 3, 4, 5, 3, 5, 4, 4, 5, 5];
-  const groupMeta = groupSizes.flatMap((size, group) => Array.from({ length: size }, (_, member) => ({ group, member })));
+  const companions = new Map([
+    [5, { id: 0, member: 0, route: 3 }], [6, { id: 0, member: 1, route: 3 }],
+    [21, { id: 1, member: 0, route: 11 }], [22, { id: 1, member: 1, route: 11 }], [23, { id: 1, member: 2, route: 11 }],
+    [38, { id: 2, member: 0, route: 15 }], [39, { id: 2, member: 1, route: 15 }],
+  ]);
   return (
     <div className="wanderers">
       {people.map((person, index) => {
-        const meta = groupMeta[index];
-        const duration = 88 + (meta.group % 5) * 9 + meta.member * 3.5;
-        const delay = -((meta.group * 13) % 70) - meta.member * .65;
+        const seed = stableResidentNumber(person.id || person.displayName || index);
+        const companion = companions.get(index);
+        const route = companion?.route ?? ((seed + index * 5) % 18);
+        const duration = 108 + (seed % 47) + (companion?.member || 0) * 2.5;
+        const delay = companion ? -(companion.id * 29 + 18) - companion.member * .7 : -(seed % Math.floor(duration));
+        const activity = residentActivity(person, projects, skills, route, batch);
         return (
           <button
             type="button"
-            className={`wanderer route-${meta.group % 8} ${String(selectedId) === String(person.id) ? "selected" : ""}`}
+            className={`wanderer route-${route} ${companion ? "walking-together" : "walking-solo"} ${String(selectedId) === String(person.id) ? "selected" : ""}`}
             key={`${person.id || person.displayName}-${batch}`}
             style={{ "--walk-delay": `${delay}s`, "--walk-duration": `${duration}s`, "--walk-scale": `${0.78 + (index % 5) * 0.055}` }}
-            onClick={(event) => { event.stopPropagation(); onSelect(person); }}
+            onClick={(event) => { event.stopPropagation(); onSelect({ ...person, townActivity: activity }); }}
             aria-label={`查看冒险家 ${person.displayName || "呆猫助手"} 的公开档案`}
           >
             <AssistantToken person={person} index={index} />
-            {index === 1 && <div className="thought-bubble">正在项目大厅附近停留…</div>}
+            {index === 1 && <div className="thought-bubble">{activity}</div>}
           </button>
         );
       })}
@@ -493,7 +502,7 @@ function WanderingAssistants({ residents, batch, selectedId, onSelect }) {
   );
 }
 
-function DetailPanel({ data, projects, skills, onClose, onSelectProject, onSelectSkill }) {
+function DetailPanel({ data, projects, skills, residents, communities, onClose, onSelectProject, onSelectSkill }) {
   if (!data) return null;
   if (data.type === "guild") {
     return (
@@ -504,7 +513,7 @@ function DetailPanel({ data, projects, skills, onClose, onSelectProject, onSelec
           <div><span><BriefcaseBusiness /></span><b>发布项目委托</b><small>让想法成为小镇里的一座新建筑</small><ChevronRight /></div>
           <div><span><WandSparkles /></span><b>挂出技能悬赏</b><small>寻找能力，也可以把自己的技能挂出来</small><ChevronRight /></div>
         </div>
-        <div className="panel-summary"><div><strong>{projects.length}</strong><span>公开项目</span></div><div><strong>{skills.length}</strong><span>技能委托</span></div><div><strong>3</strong><span>活跃社区</span></div></div>
+        <div className="panel-summary"><div><strong>{projects.length}</strong><span>公开项目</span></div><div><strong>{skills.length}</strong><span>技能委托</span></div><div><strong>{communities.length}</strong><span>活跃社区</span></div></div>
       </aside>
     );
   }
@@ -561,8 +570,9 @@ function DetailPanel({ data, projects, skills, onClose, onSelectProject, onSelec
   }
   if (data.type === "resident") {
     const resident = data.item;
-    const currentProject = projects.find((project) => String(project.id) === String(resident.home?.projectId));
-    const communities = resident.communities || [];
+    const residentCommunities = resident.communities || [];
+    const card = resident.publicCard || {};
+    const activity = resident.townActivity || residentActivity(resident, projects, skills, stableResidentNumber(resident.id) % 18, 0);
     return (
       <aside className="detail-panel resident-panel">
         <PanelHead eyebrow="ADVENTURER PROFILE" title="冒险家档案" onClose={onClose} />
@@ -571,12 +581,18 @@ function DetailPanel({ data, projects, skills, onClose, onSelectProject, onSelec
             <img className="profile-fallback" src="/assets/town/logo.png" alt="" />
             {resident.avatarUrl && <img className="profile-real-avatar" src={resident.avatarUrl} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
           </div>
-          <div><span>用户的 AI 小助手</span><h3>{resident.displayName}</h3><em>呆猫社区冒险家</em></div>
+          <div><span>用户的 AI 小助手</span><h3>{resident.displayName}</h3><em>{card.job || "呆猫社区冒险家"}</em></div>
         </div>
         <div className="resident-activity">
           <span>当前活动</span>
-          <strong>{currentProject ? `正在「${currentProject.name}」附近活动` : "正在小镇广场自由探索"}</strong>
+          <strong>{activity}</strong>
         </div>
+        {card.intro && <div className="resident-intro"><span>个人介绍</span><p>{card.intro}</p></div>}
+        {!!card.tags?.length && <div className="tag-list resident-tags">{card.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>}
+        {!!card.answers?.length && <div className="resident-answers">
+          <span>冒险家问答</span>
+          {card.answers.slice(0, 3).map((item, index) => <div key={`${item.question}-${index}`}><b>{item.question}</b><p>{item.answer}</p></div>)}
+        </div>}
         <div className="panel-metrics resident-metrics">
           <div><span>参与项目</span><b>{resident.participantProjectIds?.length || 0}</b></div>
           <div><span>关注项目</span><b>{resident.watchingProjectIds?.length || 0}</b></div>
@@ -584,9 +600,8 @@ function DetailPanel({ data, projects, skills, onClose, onSelectProject, onSelec
         </div>
         <div className="resident-communities">
           <span>所属社区</span>
-          <div>{communities.length ? communities.map((community, index) => <i key={community.id || `${community.name}-${index}`}>{community.name || "呆猫社区"}</i>) : <i>呆猫社区</i>}</div>
+          <div>{residentCommunities.length ? residentCommunities.map((community, index) => <i key={community.id || `${community.name}-${index}`}>{community.name || "呆猫社区"}</i>) : <i>暂未加入社区</i>}</div>
         </div>
-        <div className="privacy-note"><ShieldCheck /><span><b>隐私安全展示</b><small>这里只展示公开的小镇身份与活动信息，不展示微信号、手机号或其他联系方式。</small></span></div>
       </aside>
     );
   }
@@ -594,7 +609,17 @@ function DetailPanel({ data, projects, skills, onClose, onSelectProject, onSelec
     <aside className="detail-panel">
       <PanelHead eyebrow="COMMUNITY PORTAL" title="居民议事厅" onClose={onClose} />
       <p className="panel-intro">数据中心支持多个小程序社区。每个社区拥有自己的项目、任务与技能生态，并在同一座小镇里被看见。</p>
-      <div className="community-stack"><span>demo 社区<b>当前活跃</b></span><span>创客社区<em>筹备中</em></span><span>本地生活社区<em>筹备中</em></span></div>
+      <div className="community-stack">
+        {communities.length ? communities.map((community) => {
+          const memberCount = residents.filter((resident) => (resident.communities || []).some((item) => Number(item.id) === Number(community.id))).length;
+          const projectCount = projects.filter((project) => Number(project.communityId) === Number(community.id)).length;
+          return <div className="community-row" key={community.id || community.name}>
+            <span className="community-logo">{community.logoUrl ? <img src={community.logoUrl} alt="" referrerPolicy="no-referrer" /> : (community.name || "社").slice(0, 1)}</span>
+            <span><b>{community.name}</b><small>{memberCount} 位居民 · {projectCount} 个项目</small></span>
+            <em>运行中</em>
+          </div>;
+        }) : <div className="community-empty">后台暂无已启用社区</div>}
+      </div>
     </aside>
   );
 }
@@ -635,12 +660,59 @@ function resolveSelection(selected, projects, skills, residents) {
   if (selected.type === "guild" || selected.type === "community" || selected.type === "project-hall") return selected;
   if (selected.type === "project") return { type: "project", item: projects.find((item) => String(item.id) === String(selected.id)) || projects[0] };
   if (selected.type === "skill") return { type: "skill", item: skills.find((item) => String(item.id) === String(selected.id)) || skills[0] };
-  if (selected.type === "resident") return { type: "resident", item: residents.find((item) => String(item.id) === String(selected.id)) || selected.item };
+  if (selected.type === "resident") {
+    const resident = residents.find((item) => String(item.id) === String(selected.id));
+    return { type: "resident", item: { ...(resident || {}), ...(selected.item || {}) } };
+  }
   if (selected.type === "stall") {
     const stall = SKILL_STALLS.find((item) => item.id === selected.id);
     return { type: "stall", ...stall };
   }
   return null;
+}
+
+function stableResidentNumber(value) {
+  return [...String(value)].reduce((total, character) => ((total * 31) + character.charCodeAt(0)) >>> 0, 2166136261);
+}
+
+function residentActivity(resident, projects = [], skills = [], route = 0, batch = 0) {
+  const seed = stableResidentNumber(resident?.id || resident?.displayName || route);
+  const participantProjects = projects.filter((project) => (resident?.participantProjectIds || []).map(String).includes(String(project.id)));
+  const watchedProjects = projects.filter((project) => (resident?.watchingProjectIds || []).map(String).includes(String(project.id)));
+  if (participantProjects.length && seed % 5 !== 0) {
+    const project = participantProjects[(seed + batch) % participantProjects.length];
+    return `正前往「${project.name}」参加项目协作`;
+  }
+  if (watchedProjects.length && seed % 4 !== 0) {
+    const project = watchedProjects[(seed + batch) % watchedProjects.length];
+    return `去项目大厅看看「${project.name}」的新进展`;
+  }
+  const activeSkills = skills.filter((skill) => skillDisplayStatus(skill) === "active");
+  const routeActivities = [
+    "正沿北侧街道慢慢闲逛",
+    "准备去项目大厅看看新委托",
+    "在冒险家公会附近等待新任务",
+    "正往技能集市方向走",
+    "在喷泉广场附近散步",
+    "准备到居民议事厅看看新社区",
+    "在河岸步道上悠闲散步",
+    "正去长椅边和朋友碰面",
+    "从项目大厅返回中央广场",
+    "在集市外围寻找合作伙伴",
+    "沿着环镇小路随意逛逛",
+    "准备到冒险家公会登记近况",
+    "在南侧街区探索新的小店",
+    "正穿过广场前往项目大厅",
+    "在技能集市附近看看热闹",
+    "和同伴一起去河边散步",
+    "正在小镇边缘悠闲闲逛",
+    "从居民议事厅前往中央广场",
+  ];
+  if (activeSkills.length && seed % 9 === 0) {
+    const skill = activeSkills[(seed + batch) % activeSkills.length];
+    return `正去技能集市看看「${skill.title}」`;
+  }
+  return routeActivities[(route + batch) % routeActivities.length];
 }
 
 function skillDisplayStatus(skill) {

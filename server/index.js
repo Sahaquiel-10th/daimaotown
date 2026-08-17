@@ -201,7 +201,7 @@ function browserBootstrap(cache) {
     stats: raw.stats || {},
     town: {
       projects: (raw.town?.projects || []).map(publicProject),
-      residents: (raw.town?.residents || []).map(publicResident),
+      residents: (cache.snapshot?.town?.residents || []).map(publicResident),
       communities: Array.isArray(raw.town?.communities) ? raw.town.communities.map(publicCommunity).filter((item) => item.id || item.name) : [],
       events: Array.isArray(raw.town?.events) ? raw.town.events.map(publicEvent).filter((item) => item.id || item.title) : [],
       skillBounties: Array.isArray(raw.town?.skillBounties) ? raw.town.skillBounties.map(publicSkillBounty).filter((item) => item.id || item.title) : [],
