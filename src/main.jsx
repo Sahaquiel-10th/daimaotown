@@ -503,7 +503,7 @@ function WanderingAssistants({ residents, projects, skills, batch, selectedId, o
         const companion = companions.get(index);
         const route = companion?.route ?? ((seed + index * 5) % 18);
         const duration = 108 + (seed % 47) + (companion?.member || 0) * 2.5;
-        const delay = companion ? -(companion.id * 29 + 18) - companion.member * .7 : -(seed % Math.floor(duration));
+        const delay = companion ? -(companion.id * 29 + 18) - companion.member * 4.2 : -(seed % Math.floor(duration));
         const activity = residentActivity(person, projects, skills, route, batch);
         return (
           <button

@@ -163,11 +163,11 @@ h1, h2, p { margin: 0; }
 .node-label .glyph { font-size: 8px; }
 
 .resident-ring { position: absolute; z-index: 9; inset: 0; pointer-events: none; }
-.assistant-token { position: absolute; width: 52px; display: grid; justify-items: center; pointer-events: none; animation: assistant-bob 2.8s ease-in-out infinite; }
-.assistant-body { position: relative; width: 38px; height: 40px; overflow: hidden; border: 2px solid #fff; border-radius: 48% 48% 43% 43%; background: #fff; box-shadow: 0 4px 0 rgba(45,48,44,.2), 0 0 0 1px rgba(45,48,44,.35); }
-.assistant-body .assistant-fallback { position: absolute; inset: auto auto 0 50%; width: 38px !important; max-width: none; transform: translate(-50%, 5px) !important; filter: none !important; }
+.assistant-token { position: absolute; width: 104px; display: grid; justify-items: center; pointer-events: none; animation: assistant-bob 2.8s ease-in-out infinite; }
+.assistant-body { position: relative; width: 76px; height: 80px; overflow: hidden; border: 3px solid #fff; border-radius: 48% 48% 43% 43%; background: #fff; box-shadow: 0 7px 0 rgba(45,48,44,.2), 0 0 0 2px rgba(45,48,44,.35); }
+.assistant-body .assistant-fallback { position: absolute; inset: auto auto 0 50%; width: 76px !important; max-width: none; transform: translate(-50%, 10px) !important; filter: none !important; }
 .assistant-body .assistant-avatar { position: absolute; inset: 0; width: 100% !important; height: 100%; object-fit: cover; transform: none !important; filter: none !important; background: #fff; }
-.assistant-token span { max-width: 70px; margin-top: 3px; padding: 2px 5px; overflow: hidden; border: 1px solid rgba(45,48,44,.48); border-radius: 4px; color: #3c3b35; background: rgba(250,244,226,.95); box-shadow: 1px 2px 0 rgba(45,48,44,.2); font-size: 7px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+.assistant-token span { max-width: 140px; margin-top: 5px; padding: 4px 10px; overflow: hidden; border: 2px solid rgba(45,48,44,.48); border-radius: 7px; color: #3c3b35; background: rgba(250,244,226,.96); box-shadow: 2px 3px 0 rgba(45,48,44,.2); font-size: 14px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
 .token-1 { animation-delay: -.7s; }.token-2 { animation-delay: -1.4s; }.token-3 { animation-delay: -2.1s; }
 .resident-ring > .token-0 { left: 2%; bottom: -5%; }
 .resident-ring > .token-1 { right: 1%; bottom: 1%; }
@@ -204,12 +204,12 @@ h1, h2, p { margin: 0; }
 .environment-layer .prop-tree, .environment-layer .prop-shrub { z-index: 2; }
 .environment-layer .prop-bridge { z-index: 8; transform: rotate(-11deg); transform-origin: 50% 50%; filter: drop-shadow(0 9px 6px rgba(43,50,40,.28)); }
 .wanderers { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
-.wanderer { position: absolute; left: 0; top: 0; width: 52px; height: 65px; margin: 0; padding: 0; border: 0; background: transparent; offset-rotate: 0deg; transform: scale(var(--walk-scale, .9)); animation: town-walk var(--walk-duration, 100s) linear var(--walk-delay, 0s) infinite alternate; pointer-events: auto; cursor: pointer; }
+.wanderer { position: absolute; left: 0; top: 0; width: 104px; height: 130px; margin: 0; padding: 0; border: 0; background: transparent; offset-rotate: 0deg; transform: scale(var(--walk-scale, .9)); animation: town-walk var(--walk-duration, 100s) linear var(--walk-delay, 0s) infinite alternate; pointer-events: auto; cursor: pointer; }
 .wanderer .assistant-token { left: 0; top: 0; }
 .wanderer:hover, .wanderer:focus-visible, .wanderer.selected { z-index: 52; animation-play-state: paused; outline: none; }
 .wanderer:hover .assistant-body, .wanderer:focus-visible .assistant-body, .wanderer.selected .assistant-body { box-shadow: 0 5px 0 rgba(45,48,44,.2), 0 0 0 3px var(--gold), 0 0 18px rgba(227,182,77,.85); }
-.wanderer:hover .assistant-token span, .wanderer:focus-visible .assistant-token span, .wanderer.selected .assistant-token span { max-width: 110px; padding: 3px 7px; font-size: 9px; }
-.thought-bubble { position: absolute; left: 42px; top: -22px; width: 112px; padding: 6px 8px; border: 1px solid var(--charcoal); border-radius: 9px 9px 9px 2px; background: #fff9e9; box-shadow: 2px 3px 0 rgba(45,48,44,.28); font-size: 7px; font-weight: 700; white-space: nowrap; animation: thought-fade 6s ease-in-out infinite; }
+.wanderer:hover .assistant-token span, .wanderer:focus-visible .assistant-token span, .wanderer.selected .assistant-token span { max-width: 220px; padding: 6px 14px; font-size: 18px; }
+.thought-bubble { position: absolute; left: 84px; top: -30px; width: 200px; padding: 9px 11px; border: 1px solid var(--charcoal); border-radius: 11px 11px 11px 3px; background: #fff9e9; box-shadow: 2px 3px 0 rgba(45,48,44,.28); font-size: 11px; font-weight: 700; white-space: nowrap; animation: thought-fade 6s ease-in-out infinite; }
 .route-0 { offset-path: path("M 450 770 C 730 500 1050 470 1400 510 C 1780 460 2150 540 2380 810"); }
 .route-1 { offset-path: path("M 430 980 C 700 1240 1120 1320 1590 1250 C 1980 1310 2250 1160 2380 920"); }
 .route-2 { offset-path: path("M 530 720 L 1400 850 L 2160 940"); }
