@@ -254,6 +254,7 @@ function App() {
   }
 
   function onWheel(event) {
+    if (event.target.closest?.(".detail-panel")) return;
     event.preventDefault();
     const rect = viewportRef.current?.getBoundingClientRect();
     if (!rect) return;

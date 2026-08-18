@@ -270,6 +270,8 @@ h1, h2, p { margin: 0; }
   box-shadow: 7px 9px 0 rgba(45,48,44,.65), 0 24px 60px rgba(38,44,35,.25);
   cursor: default;
   animation: panel-enter .3s ease both;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 .detail-panel::before { content: ""; position: absolute; inset: 6px; border: 1px dashed rgba(66,61,50,.2); border-radius: 12px; pointer-events: none; }
 .panel-head { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 13px; border-bottom: 2px solid rgba(45,48,44,.16); }
