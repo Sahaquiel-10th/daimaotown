@@ -93,6 +93,22 @@ h1, h2, p { margin: 0; }
   linear-gradient(180deg, #cdd8cb 0%, #aebfab 100%);
 }
 .world-sky::after { content: ""; position: absolute; inset: 0; opacity: .2; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E"); mix-blend-mode: multiply; pointer-events: none; }
+.world-sky, .paper-island, .map-paths, .environment-layer img, .world-node > img { transition: filter 1.4s ease, background 1.4s ease, opacity 1.4s ease; }
+.phase-dawn .world-sky { background: radial-gradient(ellipse at 28% 8%, rgba(255,225,170,.72), transparent 40%), linear-gradient(180deg, #d7cbbb 0%, #aebfae 100%); }
+.phase-dusk .world-sky { background: radial-gradient(ellipse at 72% 10%, rgba(244,174,112,.62), transparent 44%), linear-gradient(180deg, #aaa5aa 0%, #71847d 100%); }
+.phase-night .world-sky, .phase-late-night .world-sky { background: radial-gradient(circle at 78% 12%, rgba(245,239,203,.22) 0 2%, transparent 3%), radial-gradient(ellipse at 50% 5%, rgba(83,101,126,.42), transparent 48%), linear-gradient(180deg, #29384d 0%, #425953 100%); }
+.phase-night .paper-island { filter: brightness(.68) saturate(.78) contrast(.94); }
+.phase-late-night .paper-island { filter: brightness(.5) saturate(.64) contrast(.92); }
+.phase-night .map-paths { filter: brightness(.72) saturate(.72); }.phase-late-night .map-paths { filter: brightness(.55) saturate(.58); }
+.phase-night .environment-layer .decorative-house { filter: brightness(.56) saturate(.65) drop-shadow(0 8px 6px rgba(18,27,31,.35)); }
+.phase-late-night .environment-layer .decorative-house { filter: brightness(.38) saturate(.45) drop-shadow(0 8px 6px rgba(18,27,31,.4)); }
+.phase-night .environment-layer .prop-tree, .phase-night .environment-layer .prop-shrub { filter: brightness(.52) saturate(.62); }
+.phase-late-night .environment-layer .prop-tree, .phase-late-night .environment-layer .prop-shrub { filter: brightness(.34) saturate(.4); }
+.phase-night .environment-layer .prop-lamp, .phase-late-night .environment-layer .prop-lamp { filter: brightness(1.35) drop-shadow(0 0 10px #ffd875) drop-shadow(0 0 22px rgba(255,201,89,.8)); }
+.phase-night .guild > img, .phase-night .project-hall > img, .phase-night .skill-stall > img, .phase-night .community-hall > img { filter: brightness(.9) drop-shadow(0 14px 12px rgba(21,27,31,.3)) drop-shadow(0 0 20px rgba(255,205,96,.85)); }
+.phase-late-night .project-hall > img, .phase-late-night .skill-stall > img, .phase-late-night .community-hall > img { filter: brightness(.42) saturate(.48) drop-shadow(0 12px 10px rgba(17,24,29,.4)); }
+.phase-late-night .guild > img { filter: brightness(.88) drop-shadow(0 15px 12px rgba(17,24,29,.38)) drop-shadow(0 0 28px rgba(255,204,91,.95)); }
+.phase-night .guild::after, .phase-night .project-hall::after, .phase-night .skill-stall::after, .phase-night .community-hall::after, .phase-late-night .guild::after { content: ""; position: absolute; z-index: 1; inset: 30% 20% 12%; border-radius: 50%; background: radial-gradient(ellipse, rgba(255,218,124,.68), rgba(255,198,73,.08) 58%, transparent 72%); filter: blur(10px); pointer-events: none; }
 
 .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; user-select: none; will-change: transform; }
 .paper-island { position: absolute; inset: 55px 60px 65px; border: 4px solid rgba(57,61,53,.24); border-radius: 44% 43% 40% 42% / 34% 31% 35% 33%; background:
@@ -176,7 +192,7 @@ h1, h2, p { margin: 0; }
 .building-hover-card > * { display: block; }.building-hover-card b { font-size: 11px; }.building-hover-card span { margin-top: 3px; color: #777267; font-size: 8px; }.building-hover-card em { margin-top: 5px; color: #9b6c20; font-size: 8px; font-style: normal; font-weight: 800; }
 .world-node:hover .building-hover-card { opacity: 1; transform: translate(-50%, 0); }
 
-.community-hall { left: 880px; top: 1185px; width: 205px; z-index: 12; }
+.community-hall { left: 880px; top: 1185px; width: 205px; z-index: 12; }.community-hall > img { position: relative; z-index: 2; }
 .community-hall span { position: absolute; left: 50%; bottom: -23px; min-width: 135px; padding: 6px 11px; border: 1px solid var(--charcoal); border-radius: 6px; background: #f7efdb; box-shadow: 2px 3px 0 rgba(45,48,44,.5); transform: translateX(-50%); text-align: center; }
 .community-hall small, .community-hall strong { display: block; }.community-hall small { color: #8b742e; font-size: 7px; }.community-hall strong { font-size: 12px; }
 
@@ -221,7 +237,7 @@ h1, h2, p { margin: 0; }
 .district-sign strong { margin: 3px 0; font-size: 21px; }
 .district-sign em { color: #77746a; font-size: 9px; font-style: normal; }
 .projects-sign { left: 550px; top: 405px; transform: translateX(-50%) rotate(-1deg); }
-.skills-sign { left: 2195px; top: 670px; transform: translateX(-50%) rotate(1deg); }
+.skills-sign { left: 2195px; top: 735px; transform: translateX(-50%) rotate(1deg); }
 .skills-sign > div { color: #273329; background: var(--mint); }
 
 .mode-projects .skills-layer, .mode-projects .skills-sign,
@@ -241,6 +257,11 @@ h1, h2, p { margin: 0; }
 .search-panel > .glyph { color: #888276; }
 .search-panel input { width: 100%; border: 0; outline: 0; color: var(--charcoal); background: transparent; font-size: 11px; }
 .search-panel button { display: grid; place-items: center; border: 0; background: transparent; cursor: pointer; }
+
+.town-event-toast { position: absolute; z-index: 59; left: 22px; top: 22px; width: 292px; display: grid; grid-template-columns: 38px 1fr; align-items: center; gap: 9px; padding: 9px 11px; border: 1px solid rgba(45,48,44,.3); border-radius: 12px; background: rgba(255,249,232,.95); box-shadow: 4px 5px 0 rgba(45,48,44,.5), 0 14px 34px rgba(31,40,35,.2); cursor: default; pointer-events: none; animation: town-event-enter .45s ease both; }
+.town-event-toast > span { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 9px; color: #fff7dc; background: var(--charcoal); }.town-event-toast .glyph { font-size: 17px; }.town-event-toast small, .town-event-toast strong { display: block; }.town-event-toast small { color: #a06e1d; font-size: 7px; font-weight: 900; letter-spacing: .08em; }.town-event-toast strong { margin-top: 3px; overflow: hidden; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
+.town-event-toast.event-skill > span { color: #263329; background: var(--mint); }.town-event-toast.event-community > span { background: var(--coral); }.town-event-toast.event-guild > span { color: #332a18; background: var(--gold); }
+.world.event-project .project-hall > img, .world.event-skill .skill-stall > img, .world.event-community .community-hall > img, .world.event-guild .guild > img { animation: town-event-building 1.8s ease-in-out 2; }
 
 .detail-panel { position: absolute; z-index: 60; right: 22px; top: 22px; width: 330px; max-height: calc(100% - 82px); overflow: auto; padding: 17px; border: 1px solid rgba(45,48,44,.34); border-radius: 18px 18px 14px 14px; color: var(--charcoal); background:
   linear-gradient(rgba(255,255,255,.24) 1px, transparent 1px),
@@ -326,6 +347,8 @@ h1, h2, p { margin: 0; }
 @keyframes thought-fade { 0%, 15%, 85%, 100% { opacity: 0; transform: translateY(4px); } 25%, 75% { opacity: 1; transform: translateY(0); } }
 @keyframes panel-enter { from { opacity: 0; transform: translateX(18px) rotate(.5deg); } }
 @keyframes hint-out { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes town-event-enter { from { opacity: 0; transform: translateY(-8px) rotate(-1deg); } }
+@keyframes town-event-building { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-7px); filter: drop-shadow(0 0 22px rgba(255,207,91,.95)); } }
 
 @media (max-width: 1250px) {
   .town-header { grid-template-columns: minmax(250px, 1fr) minmax(390px, 1.4fr) auto; gap: 15px; padding-inline: 15px; }

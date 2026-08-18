@@ -93,12 +93,14 @@ function App() {
   const [search, setSearch] = useState("");
   const [hintVisible, setHintVisible] = useState(true);
   const [residentBatch, setResidentBatch] = useState(0);
+  const [townEventIndex, setTownEventIndex] = useState(0);
 
   useEffect(() => {
     initializeData();
     const clockTimer = window.setInterval(() => setClock(new Date()), 1000);
     const dataTimer = window.setInterval(checkForUpdates, 60_000);
     const residentTimer = window.setInterval(() => setResidentBatch((value) => value + 1), 180_000);
+    const townEventTimer = window.setInterval(() => setTownEventIndex((value) => value + 1), 12_000);
     const hintTimer = window.setTimeout(() => setHintVisible(false), 7000);
     const onVisibilityChange = () => {
       if (!document.hidden) checkForUpdates();
@@ -108,6 +110,7 @@ function App() {
       window.clearInterval(clockTimer);
       window.clearInterval(dataTimer);
       window.clearInterval(residentTimer);
+      window.clearInterval(townEventTimer);
       window.clearTimeout(hintTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
@@ -183,10 +186,14 @@ function App() {
   const residents = bootstrap?.town?.residents || [];
   const communities = bootstrap?.town?.communities || [];
   const skills = bootstrap ? (bootstrap.town?.skillBounties || []) : DEMO_SKILLS;
+  const officialEvents = bootstrap?.town?.events || [];
   const stats = bootstrap?.stats || {};
   const visibleProjects = projects.filter((project) => !search || `${project.name} ${(project.tags || []).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   const visibleSkills = skills.filter((skill) => !search || `${skill.title} ${skill.ownerName} ${(skill.tags || []).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   const selectedData = resolveSelection(selected, projects, skills, residents);
+  const timeOfDay = townTimePhase(clock);
+  const townEvents = buildTownEvents(projects, skills, communities, officialEvents);
+  const currentTownEvent = townEvents[townEventIndex % townEvents.length];
 
   function fittedScale() {
     const rect = viewportRef.current?.getBoundingClientRect();
@@ -297,7 +304,7 @@ function App() {
 
       <section
         ref={viewportRef}
-        className={`world-viewport mode-${mode}`}
+        className={`world-viewport mode-${mode} phase-${timeOfDay}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -306,7 +313,7 @@ function App() {
       >
         <div className="world-sky" />
         <div
-          className="world"
+          className={`world event-${currentTownEvent.type}`}
           style={{ width: WORLD.width, height: WORLD.height, transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.scale})` }}
         >
           <div className="paper-island" />
@@ -366,6 +373,11 @@ function App() {
         </div>
 
         {hintVisible && <div className="map-hint"><Maximize2 />拖动画布探索小镇 · 滚轮缩放</div>}
+
+        <div className={`town-event-toast event-${currentTownEvent.type}`} key={`${currentTownEvent.type}-${townEventIndex}`}>
+          <span><Sparkles /></span>
+          <div><small>小镇事件 · {currentTownEvent.place}</small><strong>{currentTownEvent.text}</strong></div>
+        </div>
 
         <div className="map-tools">
           <button onClick={() => zoom(0.1)} title="放大"><Plus /></button>
@@ -471,9 +483,16 @@ function WanderingAssistants({ residents, projects, skills, batch, selectedId, o
   const start = source.length > count ? (batch * count) % source.length : 0;
   const people = Array.from({ length: count }, (_, index) => source[(start + index) % source.length]);
   const companions = new Map([
-    [5, { id: 0, member: 0, route: 3 }], [6, { id: 0, member: 1, route: 3 }],
-    [21, { id: 1, member: 0, route: 11 }], [22, { id: 1, member: 1, route: 11 }], [23, { id: 1, member: 2, route: 11 }],
-    [38, { id: 2, member: 0, route: 15 }], [39, { id: 2, member: 1, route: 15 }],
+    [2, { id: 0, member: 0, route: 1 }], [3, { id: 0, member: 1, route: 1 }],
+    [7, { id: 1, member: 0, route: 3 }], [8, { id: 1, member: 1, route: 3 }], [9, { id: 1, member: 2, route: 3 }],
+    [13, { id: 2, member: 0, route: 5 }], [14, { id: 2, member: 1, route: 5 }],
+    [18, { id: 3, member: 0, route: 7 }], [19, { id: 3, member: 1, route: 7 }], [20, { id: 3, member: 2, route: 7 }],
+    [24, { id: 4, member: 0, route: 9 }], [25, { id: 4, member: 1, route: 9 }],
+    [29, { id: 5, member: 0, route: 11 }], [30, { id: 5, member: 1, route: 11 }], [31, { id: 5, member: 2, route: 11 }],
+    [35, { id: 6, member: 0, route: 13 }], [36, { id: 6, member: 1, route: 13 }],
+    [40, { id: 7, member: 0, route: 15 }], [41, { id: 7, member: 1, route: 15 }], [42, { id: 7, member: 2, route: 15 }],
+    [45, { id: 8, member: 0, route: 17 }], [46, { id: 8, member: 1, route: 17 }],
+    [47, { id: 9, member: 0, route: 6 }], [48, { id: 9, member: 1, route: 6 }], [49, { id: 9, member: 2, route: 6 }],
   ]);
   return (
     <div className="wanderers">
@@ -673,6 +692,30 @@ function resolveSelection(selected, projects, skills, residents) {
 
 function stableResidentNumber(value) {
   return [...String(value)].reduce((total, character) => ((total * 31) + character.charCodeAt(0)) >>> 0, 2166136261);
+}
+
+function townTimePhase(date) {
+  let hour = Number(new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", hour12: false }).format(date));
+  if (hour === 24) hour = 0;
+  if (hour < 5) return "late-night";
+  if (hour < 8) return "dawn";
+  if (hour < 17) return "day";
+  if (hour < 19) return "dusk";
+  return "night";
+}
+
+function buildTownEvents(projects = [], skills = [], communities = [], officialEvents = []) {
+  const activeProjects = projects.filter((project) => project.status !== "completed");
+  const completedProjects = projects.filter((project) => project.status === "completed");
+  const activeSkills = skills.filter((skill) => skillDisplayStatus(skill) === "active");
+  const events = [
+    { type: "project", place: "项目大厅", text: `${activeProjects.length} 项委托正在等待冒险家` },
+    { type: "skill", place: "技能集市", text: `${activeSkills.length} 位技能冒险家当前可以邀约` },
+    { type: "community", place: "居民议事厅", text: `${communities.length} 个社区正在小镇共同运行` },
+  ];
+  if (officialEvents[0]?.title) events.push({ type: "guild", place: "冒险家公会", text: `城镇活动「${officialEvents[0].title}」正在登记` });
+  if (completedProjects[0]?.name) events.push({ type: "project", place: "项目大厅", text: `「${completedProjects[0].name}」留下了新的完成足迹` });
+  return events;
 }
 
 function residentActivity(resident, projects = [], skills = [], route = 0, batch = 0) {

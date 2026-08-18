@@ -167,6 +167,7 @@ function publicProject(project) {
 }
 
 function publicResident(resident) {
+  const card = resident?.assistantContext?.cardSummary || resident?.publicCard || {};
   return {
     id: number(resident.id),
     displayName: text(resident.displayName, 80) || `小镇居民 #${resident.id}`,
@@ -179,6 +180,17 @@ function publicResident(resident) {
       zone: resident.home?.zone === "project" ? "project" : "plaza",
       projectId: number(resident.home?.projectId) || null,
       relation: ["participant", "watcher"].includes(resident.home?.relation) ? resident.home.relation : null,
+    },
+    publicCard: {
+      job: text(card.job, 120),
+      intro: text(card.intro, 300),
+      tags: textList(card.tags, 8, 40),
+      answers: Array.isArray(card.selectedAnswers || card.answers)
+        ? (card.selectedAnswers || card.answers).slice(0, 3).map((item) => ({
+          question: text(item?.q || item?.question, 100),
+          answer: text(item?.a || item?.answer, 200),
+        })).filter((item) => item.question && item.answer)
+        : [],
     },
   };
 }
@@ -220,7 +232,7 @@ function publicSkill(skill) {
 }
 
 function publicCommunity(community) {
-  return { id: number(community?.id) || null, name: text(community?.name, 80) };
+  return { id: number(community?.id) || null, name: text(community?.name, 80), logoUrl: publicUrl(community?.logoUrl || community?.logo_url) };
 }
 
 function publicEvent(event) {
@@ -238,3 +250,5 @@ function publicUrl(value) {
   return /^https?:\/\//i.test(url) ? url : "";
 }
 function jsonResponse(payload, status, headers = {}) { return new Response(JSON.stringify(payload), { status, headers: { "content-type": "application/json; charset=utf-8", ...headers } }); }
+
+export { publicResident as publicWorkerResident };

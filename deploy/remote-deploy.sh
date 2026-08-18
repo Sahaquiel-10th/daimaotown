@@ -22,6 +22,12 @@ release_dir="$release_root/$commit_sha"
 if [[ ! -d "$release_dir" ]]; then
   staging_dir="$(mktemp -d "$release_root/.staging-$commit_sha.XXXXXX")"
   tar -xzf - -C "$staging_dir"
+  if [[ ! -d "$staging_dir/dist/assets/town" ]]; then
+    current_release="$(readlink -f "$app_root/current" || true)"
+    test -d "$current_release/dist/assets/town"
+    mkdir -p "$staging_dir/dist/assets"
+    cp -a "$current_release/dist/assets/town" "$staging_dir/dist/assets/town"
+  fi
   test -f "$staging_dir/dist/index.html"
   test -f "$staging_dir/server/index.js"
   mv "$staging_dir" "$release_dir"

@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-node@v4
         with:
@@ -44,5 +46,9 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          tar -czf /tmp/daimaotown-release.tar.gz dist server package.json
+          if git rev-parse "${GITHUB_SHA}^" >/dev/null 2>&1 && git diff --quiet "${GITHUB_SHA}^" "$GITHUB_SHA" -- public/assets/town; then
+            tar --exclude='dist/assets/town' -czf /tmp/daimaotown-release.tar.gz dist server package.json
+          else
+            tar -czf /tmp/daimaotown-release.tar.gz dist server package.json
+          fi
           ssh -i ~/.ssh/daimaotown_deploy -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" "deploy $GITHUB_SHA" < /tmp/daimaotown-release.tar.gz

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { collectCloudFileIds, mergeRuntimePages, moderatePublicReply, publicResident, replaceCloudFileIds, stripAssistantContext } from "../server/town-core.js";
 import { createMockTownSnapshot } from "../server/mock-town.js";
+import { publicWorkerResident } from "../worker/index.js";
 
 test("居民分页合并去重并保留第一页项目快照", () => {
   const base = createMockTownSnapshot(2);
@@ -39,6 +40,25 @@ test("居民公开名片只保留展示字段且不暴露微信号", () => {
   assert.deepEqual(resident.publicCard.answers, [{ question: "最近在做什么？", answer: "筹备周末市集。" }]);
   assert.equal(JSON.stringify(resident).includes("should-not-leak"), false);
   assert.equal(JSON.stringify(resident).includes("wechat"), false);
+});
+
+test("Sites 站点接口同样输出公开名片", () => {
+  const resident = publicWorkerResident({
+    id: 4,
+    displayName: "马超",
+    assistantContext: {
+      cardSummary: {
+        job: "AI 工程师",
+        intro: "欢迎对接 AI 定制。",
+        tags: ["AI", "工程师"],
+        selectedAnswers: [{ q: "最近在做什么？", a: "正在做智能体。" }],
+      },
+      wechat: "hidden-contact",
+    },
+  });
+  assert.equal(resident.publicCard.intro, "欢迎对接 AI 定制。");
+  assert.equal(resident.publicCard.answers.length, 1);
+  assert.equal(JSON.stringify(resident).includes("hidden-contact"), false);
 });
 
 test("cloud fileID 可收集并替换为 HTTPS", () => {
