@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import { townTimePhase } from "./town-time.js";
 
 const glyph = (symbol) => function Glyph() { return <span className="glyph" aria-hidden="true">{symbol}</span>; };
 const Award = glyph("★");
@@ -693,16 +694,6 @@ function resolveSelection(selected, projects, skills, residents) {
 
 function stableResidentNumber(value) {
   return [...String(value)].reduce((total, character) => ((total * 31) + character.charCodeAt(0)) >>> 0, 2166136261);
-}
-
-function townTimePhase(date) {
-  let hour = Number(new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", hour12: false }).format(date));
-  if (hour === 24) hour = 0;
-  if (hour < 5) return "late-night";
-  if (hour < 8) return "dawn";
-  if (hour < 17) return "day";
-  if (hour < 19) return "dusk";
-  return "night";
 }
 
 function buildTownEvents(projects = [], skills = [], communities = [], officialEvents = []) {
